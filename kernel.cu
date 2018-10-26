@@ -20,13 +20,13 @@ int main() {
 	
 	
 	int fftsize = 32768;
-	int numofFFTs = 40;
+	int numofFFTs = 12;
 	int overlap = 32; //samples of overlaping 
-	bool readbinary = 1, writebinary = 1;
+	bool readbinary = 1, writebinary = 0;
 	int quantofAverageIncoherent = 4;
 	int const iterations = 1;
 	string* fileNames;
-	fileNames = new string[3]{ "prn_L1CA_32_100_fd_1e3.bin", "prn_L1CA_32_100.bin","Result.txt" };//names of files
+	fileNames = new string[3]{"prn_L1CA_32_100_fd_1e3.bin", "prn_L1CA_32_100.bin","Result.txt"};//names of files
 	
 
 	int samplesOfSignal = numofFFTs * (fftsize-overlap);//samples of data
@@ -35,7 +35,7 @@ int main() {
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
 	int fSampling = (32 * 1.023 * 1000000);
 	int blockSize = 1024;
-	int numBlocks, nBufferSize,i;
+	int numBlocks, nBufferSize, samplePhaseMantain,i;
 	
 	
 	int *devicearrayPos;
@@ -81,8 +81,8 @@ int main() {
 
 		//CHECK: READED DATA 
 		//cout << "read done\n";
-		//writedata(fftsize, hostDataFile1, "rawsin.txt", writebinary);
-		//writedata(fftsize, hostDataFile2, "rawsin2.txt", writebinary);
+		//writedata(samplesOfSignal/2, hostDataFile1, "rawsin.txt", writebinary);
+		//writedata(fftsize- overlap, hostDataFile2, "rawsin2.txt", writebinary);
 
 		//MEMORY FROM HOST TO DEVICE
 		CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
@@ -90,17 +90,17 @@ int main() {
 		cudaDeviceSynchronize();
 
 		//MULTIPLY BY DOPPLER
+		samplePhaseMantain = (i * fftsize*numofFFTs)%fSampling;
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
-		sinussignal << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, -1000, fSampling);
+		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, -1000, fSampling, samplePhaseMantain);
 		CudaCheckError();
 		cudaDeviceSynchronize();
 
-		//CHECK: MEMORY FROM DEVICE TO HOST (only for printing doppler)
+	
+		//CHECK: doppler (only for printing doppler)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
-
-		//CHECK: doppler (only for printing doppler)
-		//writedata(samplesOfSignal, hostDataFile1, "cos-sin.bin", writebinary);
+		//writedata(samplesOfSignal/2, hostDataFile1, "dopplerout.txt", writebinary);
 		
 		//EXTEND REFERENCE SIGNAL
 		numBlocks = (fftsize + blockSize - 1) / blockSize;
@@ -117,12 +117,10 @@ int main() {
 		cudaDeviceSynchronize();
 		auto elapsed_fft = chrono::high_resolution_clock::now() - fftBeg;
 
-		//CHECK: MEMORY FROM DEVICE TO HOST (only for printing fft)
-		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samples, cudaMemcpyDeviceToHost));
-		//cudaDeviceSynchronize();
 
 		//CHECK: FFT (only for printing fft)
-		//fprintf(stderr, "%d FFt done of elements %d each\n", numofFFTs,fftsize);
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samples, cudaMemcpyDeviceToHost));
+		//cudaDeviceSynchronize();
 		//writedata(fftsize, hostDataFile1, "fft.txt", writebinary);
 
 		//COMPLEX CONJUGATE AND MULTIPLICATION
@@ -133,13 +131,12 @@ int main() {
 		cudaDeviceSynchronize();
 		auto elapsed_mul = chrono::high_resolution_clock::now() - mulBeg;
 
-		//CHECK: MEMORY FROM DEVICE TO HOST (only for printing multiplication result)
-		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samples, cudaMemcpyDeviceToHost));
-		//cudaDeviceSynchronize();
+	
 
 		//CHECK: MULTIPLICATION (only for printing multiplication result)
-		//cout << "multiplication done\n";
-		//writedata(fftsize, hostDataFile1, "mult.txt", writebinary);
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost));
+		//cudaDeviceSynchronize();
+		//writedata(samplesWithOverlap, hostDataFile1, "mult.txt", writebinary);
 		
 		//IFFT (To obtain original again it has to be devided for the # of elements)
 		auto ifftBeg = chrono::high_resolution_clock::now();
@@ -149,7 +146,7 @@ int main() {
 		
 		//INCOHERENT SUM
 		numBlocks = (inchoerentNumofFFT*fftsize + blockSize - 1) / blockSize;
-		inchoerentSum << <numBlocks, blockSize >> > (inchoerentNumofFFT*fftsize, deviceDataFile1, deviceIncoherentSum, inchoerentNumofFFT, fftsize);
+		inchoerentSum << <numBlocks, blockSize >> > (inchoerentNumofFFT*fftsize, deviceDataFile1, deviceIncoherentSum, quantofAverageIncoherent, fftsize);
 		cudaDeviceSynchronize();
 
 		//MAXIMUM AND STD
@@ -157,16 +154,26 @@ int main() {
 
 
 
+		//CHECK: IFFT OR incho (not both at the same time)
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); //TO PRINT IFFT RESULT
+		//cudaDeviceSynchronize();
+		//writeIncohtxt(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.txt");//TO PRINT INCHO SUM
+		//writedata(samplesWithOverlap, hostDataFile1, fileNames[2], writebinary);//TO PRINT IFFT RESULT 
+
+
 		//MEMORY FROM HOST TO DEVICE FOR OUTPUT
-		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		cudaDeviceSynchronize();
 		
 		//OUTPUT
-		//cout << "IFFT done\n";
+		//cout<< hostDataFile1[0].x << " incho\n";
+
 		auto writeBeg = chrono::high_resolution_clock::now();
-		//writedata(samplesWithOverlap, hostDataFile1, fileNames[2], writebinary);
+
+		
+		
 		writeMaxstxt(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, "Maximums.txt");
 
 		//ELAPSED TIME

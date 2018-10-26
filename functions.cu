@@ -75,8 +75,30 @@ void writedatatxt(int N, cufftComplex *data1, string name) {
 	{
 		for (int ii = 0; ii < N; ii++)
 		{
-			 myfile<< ii << " " << (data1[ii].x)<< " " << data1[ii].y <<"\n"; 
+			myfile<< ii << " " << (data1[ii].x)<< " " << data1[ii].y <<"\n"; 
+			//myfile << data1[ii].x << "\n";
+			//myfile << data1[ii].y << "\n";
 	
+		}
+		myfile.close();
+	}
+
+	else cout << "Unable to open file\n";
+}
+
+void writeIncohtxt(int N, cuComplex *data1, string name) {
+
+	ofstream myfile;
+	myfile.open(name);
+	if (myfile.is_open())
+	{
+		for (int ii = 0; ii < N/2; ii++)
+		{
+			
+			myfile << data1[ii].x << "\n";
+			myfile << data1[ii].y << "\n";
+			
+
 		}
 		myfile.close();
 	}
@@ -203,14 +225,14 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 }
 
 
-__global__ void sinussignal(int samples, cufftComplex *data, float freq, float fs)
+__global__ void applyDoppler(int samples, cufftComplex *data, float freq, float fs,int samplePhaseMantain)
 {
 	cufftComplex aux, aux2;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		aux2.x=cos(2.0*PI*i*(float(freq)/float(fs)));
-		aux2.y= sin(2.0*PI*i*(float(freq) / float(fs)));
+		aux2.x=cos(2.0*PI*(i+ samplePhaseMantain)*(float(freq)/float(fs)));
+		aux2.y= sin(2.0*PI*(i+ samplePhaseMantain)*(float(freq) / float(fs)));
 
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 		aux.x = data[i].x*aux2.x - data[i].y*aux2.y;
@@ -235,7 +257,7 @@ __global__ void inchoerentSum(int samplesInchoerentSum, cufftComplex *dataFromIn
 		dataStorageInocherentSum[i] = 0;
 		numofSumM = i / fftsize;
 		for (int k = 0; k < quantofAverageIncoherent; k++) {
-			indexofInv = numofSumM* quantofAverageIncoherent*fftsize + k*fftsize+ i%fftsize;
+			indexofInv = numofSumM*quantofAverageIncoherent*fftsize + k*fftsize+ i%fftsize;
 			dataStorageInocherentSum[i] += dataFromInv[indexofInv].x*dataFromInv[indexofInv].x + dataFromInv[indexofInv].y*dataFromInv[indexofInv].y;
 		}
 
@@ -249,13 +271,14 @@ void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, 
 
 	for (int i = 0; i < numofIncoherentSums; i++) {
 
+		
 		nppsMaxIndx_32f(&dataIncoherentSum[i*fftsize], fftsize,&arrayMaxs[i], &arrayPos[i], pDeviceBuffer);
 		//nppsStdDev_32f();
-
+		
 	}
-	
+	cudaDeviceSynchronize();
 	
 		
-	cudaDeviceSynchronize();
+	
 	
 }

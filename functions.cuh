@@ -118,13 +118,14 @@ void readdatatxt(int, cufftComplex *, string);
 void writedatatxt(int , cufftComplex *, string);
 void writedatabinary(int, cufftComplex *, string);
 void writeMaxstxt(int, Npp32f *, int *, string);
+void writeIncohtxt(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *);
 void maxAndStd(int, Npp32f *, int, Npp32f *, int *, Npp8u *);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);
-__global__ void sinussignal(int, cufftComplex *, float, float);
+__global__ void applyDoppler(int, cufftComplex *, float, float,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
 
 
