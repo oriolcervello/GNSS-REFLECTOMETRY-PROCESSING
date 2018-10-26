@@ -18,18 +18,19 @@ using namespace std;
 int main() {
 	cudaDeviceReset();//reset device
 	
-	
+	//INPUTS
 	int fftsize = 32768;
-	int numofFFTs = 12;
+	int numofFFTs = 40;
 	int overlap = 32; //samples of overlaping 
 	bool readbinary = 1, writebinary = 0;
 	int quantofAverageIncoherent = 4;
 	int const iterations = 1;
 	string* fileNames;
+	int doppler = -1000;
 	fileNames = new string[3]{"prn_L1CA_32_100_fd_1e3.bin", "prn_L1CA_32_100.bin","Result.txt"};//names of files
 	
-
-	int samplesOfSignal = numofFFTs * (fftsize-overlap);//samples of data
+	//OTHER DECLARATIONS
+	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of data
 	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
@@ -68,7 +69,6 @@ int main() {
 	planifftFunction(fftsize, numofFFTs, 0, &inverseplan);
 
 	//LOOP
-	
 	for (i = 0; i < iterations; i++) {
 		auto Begin = std::chrono::high_resolution_clock::now();
 
@@ -77,7 +77,6 @@ int main() {
 		readdata(samplesOfSignal, hostDataFile1, fileNames[0], readbinary);
 		readdata(fftsize - overlap, hostDataFile2, fileNames[1], readbinary);
 		auto elapsed_read = chrono::high_resolution_clock::now() - readdataBeg;
-
 
 		//CHECK: READED DATA 
 		//cout << "read done\n";
@@ -92,10 +91,9 @@ int main() {
 		//MULTIPLY BY DOPPLER
 		samplePhaseMantain = (i * fftsize*numofFFTs)%fSampling;
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
-		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, -1000, fSampling, samplePhaseMantain);
+		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, doppler, fSampling, samplePhaseMantain);
 		CudaCheckError();
 		cudaDeviceSynchronize();
-
 	
 		//CHECK: doppler (only for printing doppler)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyDeviceToHost));
@@ -117,11 +115,10 @@ int main() {
 		cudaDeviceSynchronize();
 		auto elapsed_fft = chrono::high_resolution_clock::now() - fftBeg;
 
-
 		//CHECK: FFT (only for printing fft)
-		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samples, cudaMemcpyDeviceToHost));
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
-		//writedata(fftsize, hostDataFile1, "fft.txt", writebinary);
+		//writedata(samplesWithOverlap, hostDataFile1, "fft.txt", writebinary);
 
 		//COMPLEX CONJUGATE AND MULTIPLICATION
 		numBlocks = (samplesWithOverlap + blockSize - 1) / blockSize;
@@ -130,8 +127,6 @@ int main() {
 		CudaCheckError();
 		cudaDeviceSynchronize();
 		auto elapsed_mul = chrono::high_resolution_clock::now() - mulBeg;
-
-	
 
 		//CHECK: MULTIPLICATION (only for printing multiplication result)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost));
@@ -152,8 +147,6 @@ int main() {
 		//MAXIMUM AND STD
 		maxAndStd(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pDeviceBuffer);
 
-
-
 		//CHECK: IFFT OR incho (not both at the same time)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); //TO PRINT IFFT RESULT
@@ -169,11 +162,7 @@ int main() {
 		
 		//OUTPUT
 		//cout<< hostDataFile1[0].x << " incho\n";
-
 		auto writeBeg = chrono::high_resolution_clock::now();
-
-		
-		
 		writeMaxstxt(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, "Maximums.txt");
 
 		//ELAPSED TIME
