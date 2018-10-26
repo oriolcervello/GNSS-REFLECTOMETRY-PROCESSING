@@ -41,7 +41,7 @@ int main() {
 	
 	int *devicearrayPos;
 	cufftComplex *deviceDataFile1, *deviceDataFile2, *hostDataFile1, *hostDataFile2;
-	Npp32f *deviceIncoherentSum, *devicearrayMaxs;
+	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd;
 	Npp8u * pDeviceBuffer;
 	
 	long long read_elapsed_secs[iterations], fft_elapsed_secs[iterations], mul_elapsed_secs[iterations], ifft_elapsed_secs[iterations],write_elapsed_secs[iterations], elapsed_secs[iterations], shift_elapsed_secs[iterations];
@@ -49,6 +49,7 @@ int main() {
 	//ALLOCATE
 	int *hostarrayPos = new int[inchoerentNumofFFT];
 	Npp32f *hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
+	Npp32f *hostarrayStd = new Npp32f[inchoerentNumofFFT];
 	hostDataFile1 = (cufftComplex *)malloc(sizeof(cufftComplex) * samplesWithOverlap);
 	hostDataFile2 = (cufftComplex *)malloc(sizeof(cufftComplex) * fftsize);
 	CudaSafeCall(cudaMalloc(&deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap));
@@ -56,6 +57,7 @@ int main() {
 	CudaSafeCall(cudaMalloc(&deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize));
 	CudaSafeCall(cudaMalloc(&devicearrayPos, sizeof(int)*inchoerentNumofFFT));
 	CudaSafeCall(cudaMalloc(&devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT));
+	CudaSafeCall(cudaMalloc(&devicearrayStd, sizeof(Npp32f)*inchoerentNumofFFT));
 	nppsSumGetBufferSize_32f(fftsize, &nBufferSize);
 	CudaSafeCall(cudaMalloc((void **)(&pDeviceBuffer), nBufferSize));
 	cudaDeviceSynchronize();
@@ -145,7 +147,7 @@ int main() {
 		cudaDeviceSynchronize();
 
 		//MAXIMUM AND STD
-		maxAndStd(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pDeviceBuffer);
+		maxAndStd(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayStd,devicearrayPos, pDeviceBuffer);
 
 		//CHECK: IFFT OR incho (not both at the same time)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
@@ -157,13 +159,14 @@ int main() {
 
 		//MEMORY FROM HOST TO DEVICE FOR OUTPUT
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
+		CudaSafeCall(cudaMemcpy(hostarrayStd, devicearrayStd, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		cudaDeviceSynchronize();
 		
 		//OUTPUT
 		//cout<< hostDataFile1[0].x << " incho\n";
 		auto writeBeg = chrono::high_resolution_clock::now();
-		writeMaxstxt(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, "Maximums.txt");
+		writeMaxstxt(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, "Maximums.txt");
 
 		//ELAPSED TIME
 		auto elapsed_write = chrono::high_resolution_clock::now() - writeBeg;
@@ -191,10 +194,12 @@ int main() {
 	cudaFree(devicearrayPos);
 	cudaFree(devicearrayMaxs);
 	cudaFree(pDeviceBuffer);
+	cudaFree(devicearrayStd);
 	cudaDeviceReset();
 	delete[] fileNames;
 	delete[] hostarrayPos;
 	delete[] hostarrayMaxs;
+	delete[] hostarrayStd;
 	delete[] hostDataFile2;
 	delete[] hostDataFile1;
 

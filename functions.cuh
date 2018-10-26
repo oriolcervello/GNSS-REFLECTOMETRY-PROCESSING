@@ -117,11 +117,11 @@ void readdatabinary(int, cufftComplex *, string);
 void readdatatxt(int, cufftComplex *, string);
 void writedatatxt(int , cufftComplex *, string);
 void writedatabinary(int, cufftComplex *, string);
-void writeMaxstxt(int, Npp32f *, int *, string);
+void writeMaxstxt(int, Npp32f *, int *,Npp32f *, string);
 void writeIncohtxt(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *);
-void maxAndStd(int, Npp32f *, int, Npp32f *, int *, Npp8u *);
+void maxAndStd(int, Npp32f *, int, Npp32f *, Npp32f *, int *, Npp8u *);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);

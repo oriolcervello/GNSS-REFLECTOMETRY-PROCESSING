@@ -106,7 +106,7 @@ void writeIncohtxt(int N, cuComplex *data1, string name) {
 	else cout << "Unable to open file\n";
 }
 
-void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, string name) {
+void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,string name) {
 
 	ofstream myfile;
 	myfile.open(name);
@@ -114,7 +114,7 @@ void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, string name) {
 	{
 		for (int ii = 0; ii < N; ii++)
 		{
-			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << "\n";
+			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << " STD: " << hostarrayStd[ii] << "\n";
 
 		}
 		myfile.close();
@@ -265,7 +265,8 @@ __global__ void inchoerentSum(int samplesInchoerentSum, cufftComplex *dataFromIn
 }
 
 
-void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, Npp32f *arrayMaxs, int *arrayPos, Npp8u * pDeviceBuffer) {
+void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, Npp32f *arrayMaxs,
+	Npp32f *arraystd, int *arrayPos, Npp8u * pDeviceBuffer) {
 
 	
 
@@ -273,7 +274,7 @@ void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, 
 
 		
 		nppsMaxIndx_32f(&dataIncoherentSum[i*fftsize], fftsize,&arrayMaxs[i], &arrayPos[i], pDeviceBuffer);
-		//nppsStdDev_32f();
+		nppsStdDev_32f(&dataIncoherentSum[i*fftsize], fftsize,&arraystd[i], pDeviceBuffer);
 		
 	}
 	cudaDeviceSynchronize();
