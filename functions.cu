@@ -1,26 +1,90 @@
 ﻿#include"functions.cuh"
+#include "extra/TextParser.cuh"
+
+void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int* quantOfAverIncoh
+	, bool *readbinary, bool *writebinary, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames) {
+
+	TextParser t(configFileName);
+
+	TextParserSafeCall(t.seek("*FFTSIZE"));
+	*fftsize = t.getint();
+	TextParserSafeCall(t.seek("*NUMOFFFTS"));
+	*numofFFts = t.getint();
+	TextParserSafeCall(t.seek("*QUANTINCOHAVER"));
+	*quantOfAverIncoh = t.getint();
+	TextParserSafeCall(t.seek("*OVERLAP"));
+	*overlap = t.getint();
+	TextParserSafeCall(t.seek("*FSAMPLING"));
+	*fSampling = t.getint();
+	TextParserSafeCall(t.seek("*BOOLREADBIN"));
+	*readbinary = t.getint();
+	TextParserSafeCall(t.seek("*BOOLWRITEBIN"));
+	*writebinary = t.getint();
+
+	TextParserSafeCall(t.seek("*QUANTDATALINES"));
+	if (t.getint() != numofDataLines) {
+		cout << "diferent num of Data lines in the file than declared on arguments \n  To execute enter arguments: NameconfigFile.ASE NumofDataLines\n";
+		exit(1);
+	}
+
+	for (int i = 0; i < numofDataLines; i++) {
+		TextParserSafeCall(t.seek("*DATALINE"));
+
+		fileNames[i] = t.getword();
+		dataOffsetBeg[i] = t.getint();
+		dataOffsetEnd[i] = t.getint();
+		doppler[i] = t.getint();
+	}
+}
+
+void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling, int quantOfAverIncoh
+	, bool readbinary, bool writebinary, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames) {
+
+	cout << "\n" << "Quant of args: " << argc << "\n";
+	cout << "First: " << argv[0] << "\n";
+	cout << "Second: " << argv[1] << "\n";
+	cout << "Third: " << argv[2] << "\n\n";
+
+	cout << numofDataLines << "\n";
+	cout << fftsize << "\n";
+	cout << numofFFts << "\n";
+	cout << overlap << "\n";
+	cout << fSampling << "\n";
+	cout << quantOfAverIncoh << "\n";
+	cout << readbinary << "\n";
+	cout << writebinary << "\n";
+
+	for (int i = 0; i < numofDataLines; i++) {
+		cout << fileNames[i] << "  ";
+		cout << dataOffsetBeg[i] << "  ";
+		cout << dataOffsetEnd[i] << "  ";
+		cout << doppler[i] << "\n";
+
+	}
+
+}
 
 
 void readdata(int N, cufftComplex *data, string name, bool readbinary) {
 	if (readbinary == true) {
-		readdatabinary(N, data, name);
+		readdatabinary(N,0, data, name);
 	}
 	else {
 		readdatatxt(N, data, name);
 	}
 }
 
-void writedata(int N, cufftComplex *data, string name, bool writebinary) {
+void writedata(int length, cufftComplex *data, string name, bool writebinary) {
 	if (writebinary == true) {
-		writedatabinary(N, data, name);
+		writedatabinary(length, data, name);
 	}
 	else {
-		writedatatxt(N, data, name);
+		writedatatxt(length, data, name);
 	}
 }
 
 
-void readdatabinary(int N, cufftComplex *data, string name)
+void readdatabinary(int length,int offsetFromBeg, cufftComplex *data, string name)
 {
 	ifstream myfile;
 	myfile.open(name, ios::binary);
@@ -28,8 +92,9 @@ void readdatabinary(int N, cufftComplex *data, string name)
 	
 	if (myfile.is_open())
 	{
+		myfile.seekg(offsetFromBeg * sizeof(float));
 		int k = 0;
-		while (k < N)
+		while (k < length)
 		{
 			
 			myfile.read((char*)&num1, sizeof(num1));

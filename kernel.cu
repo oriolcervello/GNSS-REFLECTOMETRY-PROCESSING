@@ -15,27 +15,37 @@ using namespace std;
 
 #include"functions.cuh"
 
-int main() {
+int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 	
 	//INPUTS
-	int fftsize = 32768;
-	int numofFFTs = 40;
-	int overlap = 32; //samples of overlaping 
+	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent;
 	bool readbinary = 1, writebinary = 0;
-	int quantofAverageIncoherent = 4;
-	int const iterations = 1;
-	string* fileNames;
-	int doppler = -1000;
-	fileNames = new string[3]{"prn_L1CA_32_100_fd_1e3.bin", "prn_L1CA_32_100.bin","Result.txt"};//names of files
+	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
+	string *fileNames;
+	int *dataOffsetBeg, *dataOffsetEnd;
+	int *doppler;
+
+	fileNames = new string[numofDataLines];
+	dataOffsetBeg = new int[numofDataLines];
+	dataOffsetEnd = new int[numofDataLines];
+	doppler = new int[numofDataLines];
 	
+
+
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &quantofAverageIncoherent, &readbinary, &writebinary, dataOffsetBeg, dataOffsetEnd, doppler, fileNames);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, quantofAverageIncoherent, readbinary, writebinary, dataOffsetBeg, dataOffsetEnd, doppler, fileNames);
+
+
+
+
 	//OTHER DECLARATIONS
 	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of data
 	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
-	int fSampling = (32 * 1.023 * 1000000);
-	int blockSize = 1024;
+
+	int blockSize = 1024;//threads per block
 	int numBlocks, nBufferSize, samplePhaseMantain,i;
 	
 	
@@ -44,7 +54,7 @@ int main() {
 	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd;
 	Npp8u * pDeviceBuffer;
 	
-	long long read_elapsed_secs[iterations], fft_elapsed_secs[iterations], mul_elapsed_secs[iterations], ifft_elapsed_secs[iterations],write_elapsed_secs[iterations], elapsed_secs[iterations], shift_elapsed_secs[iterations];
+	long long read_elapsed_secs[numofDataLines], fft_elapsed_secs[numofDataLines], mul_elapsed_secs[numofDataLines], ifft_elapsed_secs[numofDataLines],write_elapsed_secs[numofDataLines], elapsed_secs[numofDataLines], shift_elapsed_secs[numofDataLines];
 	
 	//ALLOCATE
 	int *hostarrayPos = new int[inchoerentNumofFFT];
@@ -71,17 +81,17 @@ int main() {
 	planifftFunction(fftsize, numofFFTs, 0, &inverseplan);
 
 	//LOOP
-	for (i = 0; i < iterations; i++) {
+	for (i = 0; i < numofDataLines; i++) {
 		auto Begin = std::chrono::high_resolution_clock::now();
 
 		//READ DATA
 		auto readdataBeg = chrono::high_resolution_clock::now();
-		readdata(samplesOfSignal, hostDataFile1, fileNames[0], readbinary);
-		readdata(fftsize - overlap, hostDataFile2, fileNames[1], readbinary);
+		//readdata(samplesOfSignal, hostDataFile1, fileNames[i], readbinary);
+		readdatabinary(dataOffsetEnd[i]-dataOffsetEnd[i], dataOffsetBeg[i], hostDataFile1, fileNames[i]);
+		readdata(fftsize - overlap, hostDataFile2, "RefSignal.bin", readbinary);
 		auto elapsed_read = chrono::high_resolution_clock::now() - readdataBeg;
 
 		//CHECK: READED DATA 
-		//cout << "read done\n";
 		//writedata(samplesOfSignal/2, hostDataFile1, "rawsin.txt", writebinary);
 		//writedata(fftsize- overlap, hostDataFile2, "rawsin2.txt", writebinary);
 
@@ -93,7 +103,7 @@ int main() {
 		//MULTIPLY BY DOPPLER
 		samplePhaseMantain = (i * fftsize*numofFFTs)%fSampling;
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
-		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, doppler, fSampling, samplePhaseMantain);
+		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain);
 		CudaCheckError();
 		cudaDeviceSynchronize();
 	
@@ -154,7 +164,7 @@ int main() {
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); //TO PRINT IFFT RESULT
 		//cudaDeviceSynchronize();
 		//writeIncohtxt(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.txt");//TO PRINT INCHO SUM
-		//writedata(samplesWithOverlap, hostDataFile1, fileNames[2], writebinary);//TO PRINT IFFT RESULT 
+		//writedata(samplesWithOverlap, hostDataFile1,  "result.txt", writebinary);//TO PRINT IFFT RESULT 
 
 
 		//MEMORY FROM HOST TO DEVICE FOR OUTPUT
@@ -181,7 +191,7 @@ int main() {
 		elapsed_secs[i] = chrono::duration_cast<chrono::microseconds>(elapsed_total).count();
 	}
 
-	writetime(iterations, "Times_op3.txt", read_elapsed_secs, shift_elapsed_secs, fft_elapsed_secs,
+	writetime(numofDataLines, "Times_op3.txt", read_elapsed_secs, shift_elapsed_secs, fft_elapsed_secs,
 		mul_elapsed_secs, ifft_elapsed_secs, write_elapsed_secs, elapsed_secs);
 
 	//FREE MEMORY
@@ -202,7 +212,9 @@ int main() {
 	delete[] hostarrayStd;
 	delete[] hostDataFile2;
 	delete[] hostDataFile1;
-
+	delete[] dataOffsetBeg;
+	delete[] dataOffsetEnd;
+	delete[] doppler;
 
 	return 0;
 }

@@ -108,12 +108,15 @@ inline void __cudaCheckError(const char *file, const int line)
 }
 //END ERROR CHECK
 
-
+void readConfig(const char *, int, int *, int *, int *, int *, int*
+	, bool *, bool *, int *, int *, int *, string *);
+void checkInputConfig(int , const char **, int , int , int , int , int , int 
+	, bool , bool , int *, int *, int *, string *);
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
 void readdata(int, cufftComplex *, string, bool);
 void writedata(int, cufftComplex *, string, bool);
-void readdatabinary(int, cufftComplex *, string);
+void readdatabinary(int,int , cufftComplex *, string);
 void readdatatxt(int, cufftComplex *, string);
 void writedatatxt(int , cufftComplex *, string);
 void writedatabinary(int, cufftComplex *, string);
