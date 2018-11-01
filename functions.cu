@@ -92,7 +92,7 @@ void readdatabinary(int length,int offsetFromBeg, cufftComplex *data, string nam
 	
 	if (myfile.is_open())
 	{
-		myfile.seekg(offsetFromBeg * sizeof(float));
+		myfile.seekg(offsetFromBeg*2 * sizeof(float));
 		int k = 0;
 		while (k < length)
 		{

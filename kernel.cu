@@ -54,7 +54,8 @@ int main(int argc, const char* argv[]) {
 	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd;
 	Npp8u * pDeviceBuffer;
 	
-	long long read_elapsed_secs[numofDataLines], fft_elapsed_secs[numofDataLines], mul_elapsed_secs[numofDataLines], ifft_elapsed_secs[numofDataLines],write_elapsed_secs[numofDataLines], elapsed_secs[numofDataLines], shift_elapsed_secs[numofDataLines];
+	int const maxIter = 5;
+	long long read_elapsed_secs[maxIter], fft_elapsed_secs[maxIter], mul_elapsed_secs[maxIter], ifft_elapsed_secs[maxIter],write_elapsed_secs[maxIter], elapsed_secs[maxIter], shift_elapsed_secs[maxIter];
 	
 	//ALLOCATE
 	int *hostarrayPos = new int[inchoerentNumofFFT];
@@ -87,8 +88,8 @@ int main(int argc, const char* argv[]) {
 		//READ DATA
 		auto readdataBeg = chrono::high_resolution_clock::now();
 		//readdata(samplesOfSignal, hostDataFile1, fileNames[i], readbinary);
-		readdatabinary(dataOffsetEnd[i]-dataOffsetEnd[i], dataOffsetBeg[i], hostDataFile1, fileNames[i]);
-		readdata(fftsize - overlap, hostDataFile2, "RefSignal.bin", readbinary);
+		readdatabinary(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileNames[i]);
+		readdata(fftsize - overlap, hostDataFile2, "prn_L1CA_32_100.bin", readbinary);
 		auto elapsed_read = chrono::high_resolution_clock::now() - readdataBeg;
 
 		//CHECK: READED DATA 
