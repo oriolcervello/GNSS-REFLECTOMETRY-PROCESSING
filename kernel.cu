@@ -180,7 +180,6 @@ int main(int argc, const char* argv[]) {
 		cudaDeviceSynchronize();
 		
 		//OUTPUT
-		//cout<< hostDataFile1[0].x << " incho\n";
 		auto writeBeg = chrono::high_resolution_clock::now();
 		writeMaxstxt(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, "Maximums.txt");
 
