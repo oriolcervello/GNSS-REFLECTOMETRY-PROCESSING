@@ -174,7 +174,7 @@ void writeIncohtxt(int N, cuComplex *data1, string name) {
 void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,string name) {
 
 	ofstream myfile;
-	myfile.open(name);
+	myfile.open(name, ios::app);
 	if (myfile.is_open())
 	{
 		for (int ii = 0; ii < N; ii++)
@@ -182,6 +182,7 @@ void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarra
 			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << " STD: " << hostarrayStd[ii] << "\n";
 
 		}
+		myfile << "\n --------------------------------------------------------------------- \n\n";
 		myfile.close();
 	}
 
@@ -250,6 +251,25 @@ void planifftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan
 	int onembed[] = { 0 };                  // --- Output size with pitch (ignored for 1D transforms)
 	int batch = numofFFTs;// numofFFTs;                      // --- Number of batched executions
 	cufftSafeCall(cufftPlanMany(plan, rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, batch));
+
+}
+
+void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, Npp32f *arrayMaxs,
+	Npp32f *arraystd, int *arrayPos, Npp8u * pDeviceBuffer) {
+
+
+
+	for (int i = 0; i < numofIncoherentSums; i++) {
+
+
+		nppsMaxIndx_32f(&dataIncoherentSum[i*fftsize], fftsize, &arrayMaxs[i], &arrayPos[i], pDeviceBuffer);
+		nppsStdDev_32f(&dataIncoherentSum[i*fftsize], fftsize, &arraystd[i], pDeviceBuffer);
+
+	}
+	cudaDeviceSynchronize();
+
+
+
 
 }
 
@@ -330,21 +350,15 @@ __global__ void inchoerentSum(int samplesInchoerentSum, cufftComplex *dataFromIn
 }
 
 
-void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, Npp32f *arrayMaxs,
-	Npp32f *arraystd, int *arrayPos, Npp8u * pDeviceBuffer) {
+__global__ void scale(int samples, cufftComplex *data, int fftsize)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+	for (int i = index; i < samples; i += stride) {
+		data[i].x = data[i].x / float(fftsize);
+		data[i].y = data[i].y / float(fftsize);
 
-	
-
-	for (int i = 0; i < numofIncoherentSums; i++) {
-
-		
-		nppsMaxIndx_32f(&dataIncoherentSum[i*fftsize], fftsize,&arrayMaxs[i], &arrayPos[i], pDeviceBuffer);
-		nppsStdDev_32f(&dataIncoherentSum[i*fftsize], fftsize,&arraystd[i], pDeviceBuffer);
-		
 	}
-	cudaDeviceSynchronize();
-	
-		
-	
-	
 }
+
+

@@ -152,6 +152,11 @@ int main(int argc, const char* argv[]) {
 		cudaDeviceSynchronize();
 		auto elapsed_ifft = chrono::high_resolution_clock::now() - ifftBeg;
 		
+		//SCALE
+		numBlocks = (samplesWithOverlap + blockSize - 1) / blockSize;		
+		scale << <numBlocks, blockSize >> > (samplesWithOverlap, deviceDataFile1, fftsize);
+		cudaDeviceSynchronize();
+
 		//INCOHERENT SUM
 		numBlocks = (inchoerentNumofFFT*fftsize + blockSize - 1) / blockSize;
 		inchoerentSum << <numBlocks, blockSize >> > (inchoerentNumofFFT*fftsize, deviceDataFile1, deviceIncoherentSum, quantofAverageIncoherent, fftsize);

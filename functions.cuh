@@ -130,7 +130,7 @@ __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);
 __global__ void applyDoppler(int, cufftComplex *, float, float,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
-
+__global__ void scale(int, cufftComplex *, int);
 
 
 
