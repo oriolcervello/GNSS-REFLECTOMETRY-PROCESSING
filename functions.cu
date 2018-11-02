@@ -108,6 +108,23 @@ void readdatabinary(int length,int offsetFromBeg, cufftComplex *data, string nam
 	else cout << "Unable to open file";
 }
 
+void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, string name)
+{
+
+	ifstream myfile;
+	myfile.open(name, ios::binary);
+	if (myfile.is_open())
+	{
+		myfile.seekg(offsetFromBeg*sizeof(char));
+		myfile.read(data, length);
+				
+		myfile.close();
+		if(length< bytesToRead){
+			memset(&data[length], 0, bytesToRead - length);
+		}
+	}
+	else cout << "Unable to open file";
+}
 
 void readdatatxt(int N, cufftComplex *data, string name)
 {
@@ -361,4 +378,30 @@ __global__ void scale(int samples, cufftComplex *data, int fftsize)
 	}
 }
 
+__global__ void maskAndShift(char *devicedata, cuComplex *Dcomplexdata, int totalBytes)
+{
+	unsigned k;
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+	for (int i = index; i < totalBytes; i += stride) {
 
+		k = (unsigned)(devicedata[i]);
+		Dcomplexdata[i * 4 + 3].y = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 3].x = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 2].y = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 2].x = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 1].y = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 1].x = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 0].y = (k % 2);
+		k = k / 2;
+		Dcomplexdata[i * 4 + 0].x = (k % 2);
+
+
+	}
+}

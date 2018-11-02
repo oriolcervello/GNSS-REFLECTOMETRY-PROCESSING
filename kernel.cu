@@ -18,7 +18,7 @@ using namespace std;
 int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 	
-	//INPUTS
+	//READ CONFIG FILE
 	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent;
 	bool readbinary = 1, writebinary = 0;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
@@ -30,17 +30,14 @@ int main(int argc, const char* argv[]) {
 	dataOffsetBeg = new int[numofDataLines];
 	dataOffsetEnd = new int[numofDataLines];
 	doppler = new int[numofDataLines];
-	
-
 
 	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &quantofAverageIncoherent, &readbinary, &writebinary, dataOffsetBeg, dataOffsetEnd, doppler, fileNames);
 	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, quantofAverageIncoherent, readbinary, writebinary, dataOffsetBeg, dataOffsetEnd, doppler, fileNames);
 
-
-
-
 	//OTHER DECLARATIONS
-	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of data
+	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of complex data
+	int bytesToRead = samplesOfSignal/4;
+	if (samplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded: samplesOfSignal%4!=0 \n "; }
 	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
@@ -48,21 +45,23 @@ int main(int argc, const char* argv[]) {
 	int blockSize = 1024;//threads per block
 	int numBlocks, nBufferSize, samplePhaseMantain,i;
 	
-	
-	int *devicearrayPos;
+	char *hostBytesOfData, *deviceBytesOfData;
+	int *devicearrayPos,*hostarrayPos;
 	cufftComplex *deviceDataFile1, *deviceDataFile2, *hostDataFile1, *hostDataFile2;
-	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd;
+	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd, *hostarrayMaxs, *hostarrayStd;
 	Npp8u * pDeviceBuffer;
 	
 	int const maxIter = 5;
 	long long read_elapsed_secs[maxIter], fft_elapsed_secs[maxIter], mul_elapsed_secs[maxIter], ifft_elapsed_secs[maxIter],write_elapsed_secs[maxIter], elapsed_secs[maxIter], shift_elapsed_secs[maxIter];
 	
 	//ALLOCATE
-	int *hostarrayPos = new int[inchoerentNumofFFT];
-	Npp32f *hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
-	Npp32f *hostarrayStd = new Npp32f[inchoerentNumofFFT];
+	hostBytesOfData = (char *)malloc(sizeof(char) * bytesToRead);
+	hostarrayPos = new int[inchoerentNumofFFT];
+	hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
+	hostarrayStd = new Npp32f[inchoerentNumofFFT];
 	hostDataFile1 = (cufftComplex *)malloc(sizeof(cufftComplex) * samplesWithOverlap);
 	hostDataFile2 = (cufftComplex *)malloc(sizeof(cufftComplex) * fftsize);
+	CudaSafeCall(cudaMalloc(&deviceBytesOfData, sizeof(char)*bytesToRead));
 	CudaSafeCall(cudaMalloc(&deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap));
 	CudaSafeCall(cudaMalloc(&deviceDataFile2, sizeof(cufftComplex)*fftsize));
 	CudaSafeCall(cudaMalloc(&deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize));
@@ -90,6 +89,12 @@ int main(int argc, const char* argv[]) {
 		//readdata(samplesOfSignal, hostDataFile1, fileNames[i], readbinary);
 		readdatabinary(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileNames[i]);
 		readdata(fftsize - overlap, hostDataFile2, "prn_L1CA_32_100.bin", readbinary);
+
+
+		/*if (dataOffsetEnd[i] - dataOffsetBeg[i] > bytesToRead) { cout << "Indices of reading in config file exceed bytesToRead decleared"; }
+		if ((dataOffsetEnd[i] - dataOffsetBeg[i])%(fftsize*quantofAverageIncoherent)!=0) {
+		cout << "Warning length of data won't complete last incho sum in DATALINE: "<<i<<"\n"; }
+		readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i],bytesToRead, hostBytesOfData, fileNames[i]);*/
 		auto elapsed_read = chrono::high_resolution_clock::now() - readdataBeg;
 
 		//CHECK: READED DATA 
@@ -99,8 +104,16 @@ int main(int argc, const char* argv[]) {
 		//MEMORY FROM HOST TO DEVICE
 		CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
 		CudaSafeCall(cudaMemcpy(deviceDataFile2, hostDataFile2, sizeof(cufftComplex)*(fftsize - overlap), cudaMemcpyHostToDevice));
+		
+		/*CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));*/
 		cudaDeviceSynchronize();
-
+		
+		//MASK AND SHIFT
+		/*numBlocks = (bytesToRead + blockSize - 1) / blockSize;
+		maskAndShift << <numBlocks, blockSize >> > (deviceBytesOfData, deviceDataFile1, bytesToRead);
+		CudaCheckError();
+		cudaDeviceSynchronize();
+		*/
 		//MULTIPLY BY DOPPLER
 		samplePhaseMantain = (i * fftsize*numofFFTs)%fSampling;
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
@@ -155,11 +168,13 @@ int main(int argc, const char* argv[]) {
 		//SCALE
 		numBlocks = (samplesWithOverlap + blockSize - 1) / blockSize;		
 		scale << <numBlocks, blockSize >> > (samplesWithOverlap, deviceDataFile1, fftsize);
+		CudaCheckError();
 		cudaDeviceSynchronize();
 
 		//INCOHERENT SUM
 		numBlocks = (inchoerentNumofFFT*fftsize + blockSize - 1) / blockSize;
 		inchoerentSum << <numBlocks, blockSize >> > (inchoerentNumofFFT*fftsize, deviceDataFile1, deviceIncoherentSum, quantofAverageIncoherent, fftsize);
+		CudaCheckError(); 
 		cudaDeviceSynchronize();
 
 		//MAXIMUM AND STD
@@ -207,11 +222,13 @@ int main(int argc, const char* argv[]) {
 	cudaFree(deviceDataFile2);
 	cudaFree(deviceIncoherentSum);
 	cudaFree(devicearrayPos);
+	cudaFree(deviceBytesOfData);
 	cudaFree(devicearrayMaxs);
 	cudaFree(pDeviceBuffer);
 	cudaFree(devicearrayStd);
 	cudaDeviceReset();
 	delete[] fileNames;
+	delete[] hostBytesOfData;
 	delete[] hostarrayPos;
 	delete[] hostarrayMaxs;
 	delete[] hostarrayStd;

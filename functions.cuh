@@ -117,6 +117,7 @@ void planfftFunction(int , int , int , cufftHandle *);
 void readdata(int, cufftComplex *, string, bool);
 void writedata(int, cufftComplex *, string, bool);
 void readdatabinary(int,int , cufftComplex *, string);
+void readRealData(int, int,int, char *, string);
 void readdatatxt(int, cufftComplex *, string);
 void writedatatxt(int , cufftComplex *, string);
 void writedatabinary(int, cufftComplex *, string);
@@ -131,6 +132,7 @@ __global__ void extendRefSignal(int, cufftComplex *, int);
 __global__ void applyDoppler(int, cufftComplex *, float, float,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
 __global__ void scale(int, cufftComplex *, int);
+__global__ void maskAndShift(char *, cuComplex *, int);
 
 
 
