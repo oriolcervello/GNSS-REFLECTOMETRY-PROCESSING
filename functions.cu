@@ -40,20 +40,25 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling, int quantOfAverIncoh
 	, bool readbinary, bool writebinary, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames) {
 
+	if (argc != 3) {
+		cout << "Error: Wrong number of arguments\n"; 
+		exit(0);
+	}
+
 	cout << "\n" << "Quant of args: " << argc << "\n";
 	cout << "First: " << argv[0] << "\n";
 	cout << "Second: " << argv[1] << "\n";
 	cout << "Third: " << argv[2] << "\n\n";
 
-	cout << numofDataLines << "\n";
-	cout << fftsize << "\n";
-	cout << numofFFts << "\n";
-	cout << overlap << "\n";
-	cout << fSampling << "\n";
-	cout << quantOfAverIncoh << "\n";
-	cout << readbinary << "\n";
-	cout << writebinary << "\n";
-
+	cout << "FFT Size: " << fftsize << "\n";
+	cout << "Num. of FFT: " << numofFFts << "\n";
+	cout << "Overlap: " << overlap << "\n";
+	cout << "FSampling: " << fSampling << "\n";
+	cout << "Quant of averg Inch.: " << quantOfAverIncoh << "\n";
+	cout << "Reading binary: " << readbinary << "\n";
+	cout << "Writting binary: " << writebinary << "\n";
+	cout << "Num of data lines: " << numofDataLines << "\n";
+	cout << "Data lines: \n";
 	for (int i = 0; i < numofDataLines; i++) {
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
@@ -110,6 +115,10 @@ void readdatabinary(int length,int offsetFromBeg, cufftComplex *data, string nam
 
 void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, string name)
 {
+	if (length > bytesToRead) {
+		cout << "Error: iput length bigger than bytesToRead";
+		exit(0);
+	}
 
 	ifstream myfile;
 	myfile.open(name, ios::binary);
@@ -120,6 +129,7 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, str
 				
 		myfile.close();
 		if(length< bytesToRead){
+			cout << bytesToRead- length << "Warning: length smaller than bytesToRead, Bytes filled with 0 \n";
 			memset(&data[length], 0, bytesToRead - length);
 		}
 	}

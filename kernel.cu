@@ -37,7 +37,7 @@ int main(int argc, const char* argv[]) {
 	//OTHER DECLARATIONS
 	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of complex data
 	int bytesToRead = samplesOfSignal/4;
-	if (samplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded: samplesOfSignal%4!=0 \n "; }
+	if (samplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded toward negative infinity: samplesOfSignal%4!=0 \n "; }
 	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
