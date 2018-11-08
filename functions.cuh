@@ -109,20 +109,16 @@ inline void __cudaCheckError(const char *file, const int line)
 //END ERROR CHECK
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*
-	, bool *, bool *, int *, int *, int *, string *);
+	,  int *, int *, int *, string *, string *);
 void checkInputConfig(int , const char **, int , int , int , int , int , int 
-	, bool , bool , int *, int *, int *, string *);
+	,  int *, int *, int *, string *, string *);
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
-void readdata(int, cufftComplex *, string, bool);
-void writedata(int, cufftComplex *, string, bool);
-void readdatabinary(int,int , cufftComplex *, string);
+void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
-void readdatatxt(int, cufftComplex *, string);
-void writedatatxt(int , cufftComplex *, string);
-void writedatabinary(int, cufftComplex *, string);
+void writedata(int, cufftComplex *, string);
 void writeMaxstxt(int, Npp32f *, int *,Npp32f *, string);
-void writeIncohtxt(int, cuComplex *, string);
+void writeIncoh(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *);
 void maxAndStd(int, Npp32f *, int, Npp32f *, Npp32f *, int *, Npp8u *);

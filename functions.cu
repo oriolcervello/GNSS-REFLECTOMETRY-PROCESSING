@@ -2,7 +2,7 @@
 #include "extra/TextParser.cuh"
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int* quantOfAverIncoh
-	, bool *readbinary, bool *writebinary, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames) {
+	, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames) {
 
 	TextParser t(configFileName);
 
@@ -16,10 +16,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*overlap = t.getint();
 	TextParserSafeCall(t.seek("*FSAMPLING"));
 	*fSampling = t.getint();
-	TextParserSafeCall(t.seek("*BOOLREADBIN"));
-	*readbinary = t.getint();
-	TextParserSafeCall(t.seek("*BOOLWRITEBIN"));
-	*writebinary = t.getint();
+
 
 	TextParserSafeCall(t.seek("*QUANTDATALINES"));
 	if (t.getint() != numofDataLines) {
@@ -34,11 +31,12 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		dataOffsetBeg[i] = t.getint();
 		dataOffsetEnd[i] = t.getint();
 		doppler[i] = t.getint();
+		fileRefNames[i] = t.getword();
 	}
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling, int quantOfAverIncoh
-	, bool readbinary, bool writebinary, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames) {
+	,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -55,41 +53,21 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Overlap: " << overlap << "\n";
 	cout << "FSampling: " << fSampling << "\n";
 	cout << "Quant of averg Inch.: " << quantOfAverIncoh << "\n";
-	cout << "Reading binary: " << readbinary << "\n";
-	cout << "Writting binary: " << writebinary << "\n";
+
 	cout << "Num of data lines: " << numofDataLines << "\n";
 	cout << "Data lines: \n";
 	for (int i = 0; i < numofDataLines; i++) {
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
 		cout << dataOffsetEnd[i] << "  ";
-		cout << doppler[i] << "\n";
+		cout << doppler[i] << " ";
+		cout << fileRefNames[i] << "\n";
 
 	}
 
 }
 
-
-void readdata(int N, cufftComplex *data, string name, bool readbinary) {
-	if (readbinary == true) {
-		readdatabinary(N,0, data, name);
-	}
-	else {
-		readdatatxt(N, data, name);
-	}
-}
-
-void writedata(int length, cufftComplex *data, string name, bool writebinary) {
-	if (writebinary == true) {
-		writedatabinary(length, data, name);
-	}
-	else {
-		writedatatxt(length, data, name);
-	}
-}
-
-
-void readdatabinary(int length,int offsetFromBeg, cufftComplex *data, string name)
+void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 {
 	ifstream myfile;
 	myfile.open(name, ios::binary);
@@ -136,49 +114,8 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, str
 	else cout << "Unable to open file";
 }
 
-void readdatatxt(int N, cufftComplex *data, string name)
-{
-	ifstream myfile;
-	myfile.open(name, ios::binary);
-	string line;
-	
 
-	if (myfile.is_open())
-	{
-		int k = 0;
-		while (k < N)
-		{
-			getline(myfile, line, '\n');
-			data[k].x = stof(line);
-			data[k].y = 0;
-
-			k++;
-		}
-		myfile.close();
-	}
-	else cout << "Unable to open file";
-}
-
-void writedatatxt(int N, cufftComplex *data1, string name) {
-
-	ofstream myfile;
-	myfile.open(name);
-	if (myfile.is_open())
-	{
-		for (int ii = 0; ii < N; ii++)
-		{
-			myfile<< ii << " " << (data1[ii].x)<< " " << data1[ii].y <<"\n"; 
-			//myfile << data1[ii].x << "\n";
-			//myfile << data1[ii].y << "\n";
-	
-		}
-		myfile.close();
-	}
-
-	else cout << "Unable to open file\n";
-}
-
-void writeIncohtxt(int N, cuComplex *data1, string name) {
+void writeIncoh(int N, cuComplex *data1, string name) {
 
 	ofstream myfile;
 	myfile.open(name, ios::binary);
@@ -187,8 +124,7 @@ void writeIncohtxt(int N, cuComplex *data1, string name) {
 		for (int ii = 0; ii < N/2; ii++)
 		{
 			
-			//myfile << data1[ii].x << "\n";
-			//myfile << data1[ii].y << "\n";
+
 			myfile.write((char*)&data1[ii].x, sizeof(float));
 			myfile.write((char*)&data1[ii].y, sizeof(float));
 			
@@ -218,7 +154,7 @@ void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarra
 	else cout << "Unable to open file\n";
 }
 
-void writedatabinary(int N, cufftComplex *data1, string name) {
+void writedata(int N, cufftComplex *data1, string name) {
 
 	ofstream myfile;
 	myfile.open(name, ios::binary);
