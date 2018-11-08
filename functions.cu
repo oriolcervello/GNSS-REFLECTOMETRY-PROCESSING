@@ -181,14 +181,16 @@ void writedatatxt(int N, cufftComplex *data1, string name) {
 void writeIncohtxt(int N, cuComplex *data1, string name) {
 
 	ofstream myfile;
-	myfile.open(name);
+	myfile.open(name, ios::binary);
 	if (myfile.is_open())
 	{
 		for (int ii = 0; ii < N/2; ii++)
 		{
 			
-			myfile << data1[ii].x << "\n";
-			myfile << data1[ii].y << "\n";
+			//myfile << data1[ii].x << "\n";
+			//myfile << data1[ii].y << "\n";
+			myfile.write((char*)&data1[ii].x, sizeof(float));
+			myfile.write((char*)&data1[ii].y, sizeof(float));
 			
 
 		}

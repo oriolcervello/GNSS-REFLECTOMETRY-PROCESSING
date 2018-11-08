@@ -41,6 +41,10 @@ int main(int argc, const char* argv[]) {
 	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
 	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
+	if (numofFFTs % quantofAverageIncoherent != 0) {
+		cout << "Error: numofFFTs / quantofAverageIncoherent != 0\n ";
+		exit(-1);
+	}
 
 	int blockSize = 1024;//threads per block
 	int numBlocks, nBufferSize, samplePhaseMantain,i;
@@ -181,10 +185,10 @@ int main(int argc, const char* argv[]) {
 		maxAndStd(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayStd,devicearrayPos, pDeviceBuffer);
 
 		//CHECK: IFFT OR incho (not both at the same time)
-		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
+		CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); //TO PRINT IFFT RESULT
-		//cudaDeviceSynchronize();
-		//writeIncohtxt(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.txt");//TO PRINT INCHO SUM
+		cudaDeviceSynchronize();
+		writeIncohtxt(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.bin");//TO PRINT INCHO SUM
 		//writedata(samplesWithOverlap, hostDataFile1,  "result.txt", writebinary);//TO PRINT IFFT RESULT 
 
 
