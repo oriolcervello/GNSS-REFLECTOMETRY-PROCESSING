@@ -117,16 +117,15 @@ void planfftFunction(int , int , int , cufftHandle *);
 void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
-void writeMaxstxt(int, Npp32f *, int *,Npp32f *, string);
+void writeMaxs(int, Npp32f *, int *,Npp32f *, string);
 void writeIncoh(int, cuComplex *, string);
-void writetime(int, string, long long *, long long *, long long *,
-	long long *, long long *, long long *, long long *);
+void writetime(int, string, long long *, long long *, long long *);
 void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
 void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);
-__global__ void applyDoppler(int, cufftComplex *, float, float,int);
+__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
 __global__ void scale(int, cufftComplex *, int);
 __global__ void maskAndShift(char *, cuComplex *, int);

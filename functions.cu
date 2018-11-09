@@ -136,7 +136,7 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 	else cout << "Unable to open file\n";
 }
 
-void writeMaxstxt(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,string name) {
+void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,string name) {
 
 	ofstream myfile;
 	myfile.open(name, ios::app);
@@ -172,18 +172,16 @@ void writedata(int N, cufftComplex *data1, string name) {
 	else cout << "Unable to open file\n";
 }
 
-void writetime(int N, string name, long long *readtime, long long *shifttime, long long *ffttime,
-	long long *multime, long long *ifftime, long long *writetime, long long *looptime) {
+void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime) {
 
 	ofstream myfile;
 	myfile.open(name);
 	if (myfile.is_open())
 	{
-		myfile << "Atempt\t\tReadT.\t\tShiftT.\t\tFFTT.\t\tMulT.\t\tIFFTT.\t\tWriteT.\t\tLoopT." << "\n";
+		myfile << "Atempt\t\tReadT.\t\tWriteT.\t\tLoopT." << "\n";
 		for (int ii = 0; ii < N; ii++)
 		{
-			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << shifttime[ii] << "\t\t" << ffttime[ii] << "\t\t" << multime[ii];
-			myfile << "\t\t" << ifftime[ii] << "\t\t" << writetime[ii] << "\t\t" << looptime[ii] << "\n";
+			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << writetime[ii] << "\t\t" << looptime[ii] << "\n";
 
 		}
 		myfile.close();
@@ -226,7 +224,6 @@ void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int ff
 
 		nppsMaxIndx_32f(&deviceDataIncoherentSum[i*fftsize], fftsize, &deviceArrayMaxs[i], &deviceArrayPos[i], pDeviceBuffer);
 	}
-	cudaDeviceSynchronize();
 }
 
 
@@ -261,13 +258,6 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 			}			
 		}		
 	}
-
-	
-	cudaDeviceSynchronize();
-
-
-
-
 }
 
 __global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, int refsize)
@@ -302,14 +292,14 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 }
 
 
-__global__ void applyDoppler(int samples, cufftComplex *data, float freq, float fs,int samplePhaseMantain)
+__global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain)
 {
 	cufftComplex aux, aux2;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		aux2.x=cos(2.0*PI*(i+ samplePhaseMantain)*(float(freq)/float(fs)));
-		aux2.y= sin(2.0*PI*(i+ samplePhaseMantain)*(float(freq) / float(fs)));
+		aux2.x=cos(2.0*PI*(i+ samplePhaseMantain)*(float(freqDoppler)/float(fs)));
+		aux2.y= sin(2.0*PI*(i+ samplePhaseMantain)*(float(freqDoppler) / float(fs)));
 
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 		aux.x = data[i].x*aux2.x - data[i].y*aux2.y;
@@ -322,34 +312,36 @@ __global__ void applyDoppler(int samples, cufftComplex *data, float freq, float 
 	}
 }
 
-__global__ void savePeak(int numOfFFT, cufftComplex *dataFromInv, cufftComplex *dataToSave, int peakSamplesToSave,
+__global__ void savePeak(int numOfFFT, cufftComplex *dataFromIFFT, cufftComplex *dataToSave, int peakSamplesToSave,
 	int quantOfIncohSumAve,int fftsize, int *arrayPos) {
+
 	int samplesToSave = numOfFFT * peakSamplesToSave;
 	int posOnIFFT,fftOfThePeak,indexOfArrayPos, leftPosMaxOnOneIFFT, posOnOneIFFT;//rightPosMaxOnOneIFFT;
+	
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samplesToSave; i += stride) {
+
 		fftOfThePeak = i / peakSamplesToSave;//num of FFT in dataFromInv
 		indexOfArrayPos = fftOfThePeak / quantOfIncohSumAve;//number of index in arrayPos
-
 		//rightPosMaxOnOneIFFT = (arrayPos[indexOfPos] + peakSamplesToSave / 2);
-		leftPosMaxOnOneIFFT = (arrayPos[indexOfArrayPos] - peakSamplesToSave / 2);//begining of data to save
+		leftPosMaxOnOneIFFT = arrayPos[indexOfArrayPos] - (peakSamplesToSave / 2);//begining of data to save
 		posOnOneIFFT = leftPosMaxOnOneIFFT + (i%peakSamplesToSave);// sample of i in one fft
 
 		if (posOnOneIFFT >= fftsize) {
 			posOnIFFT = fftOfThePeak * fftsize + posOnOneIFFT%fftsize; //sample in the data from IFFT
-			dataToSave[i] = dataFromInv[posOnIFFT];
+			dataToSave[i] = dataFromIFFT[posOnIFFT];
 			
 			//case 2
 		}
 		else if (posOnOneIFFT < 0) {
 			posOnIFFT = fftOfThePeak * fftsize + (fftsize+posOnOneIFFT);//sample in the data from IFFT
-			dataToSave[i] = dataFromInv[posOnIFFT];
+			dataToSave[i] = dataFromIFFT[posOnIFFT];
 			//case 3
 		}
 		else {
-
-			dataToSave[i] = dataFromInv[posOnIFFT];//sample in the data from IFFT
+			posOnIFFT = fftOfThePeak * fftsize + posOnOneIFFT;
+			dataToSave[i] = dataFromIFFT[posOnIFFT];//sample in the data from IFFT
 			//case 1
 		}
 	}
