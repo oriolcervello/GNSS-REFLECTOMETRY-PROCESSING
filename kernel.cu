@@ -19,7 +19,7 @@ int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 	
 	//READ CONFIG FILE
-	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent;
+	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, peakRangeStd=65;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	string *fileDataNames, *fileRefNames;
 	int *dataOffsetBeg, *dataOffsetEnd;
@@ -181,21 +181,22 @@ int main(int argc, const char* argv[]) {
 		CudaCheckError(); 
 		cudaDeviceSynchronize();
 
-		//MAXIMUM AND STD
-		maxAndStd(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayStd,devicearrayPos, pDeviceBuffer);
-
 		//CHECK: IFFT OR incho (not both at the same time)
-		CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost)); //TO PRINT INCHO SUM
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); //TO PRINT IFFT RESULT
-		cudaDeviceSynchronize();
-		writeIncoh(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.bin");//TO PRINT INCHO SUM
-		//writedata(samplesWithOverlap, hostDataFile1,  "result.txt");//TO PRINT IFFT RESULT 
+		//cudaDeviceSynchronize();
+		//writeIncoh(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.bin");//TO PRINT INCHO SUM
+		//writedata(samplesWithOverlap, hostDataFile1,  "result.bin");//TO PRINT IFFT RESULT 
 
+		//MAXIMUM AND STD
+		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pDeviceBuffer);
+		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
+		cudaDeviceSynchronize();
+		stdCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayStd, hostarrayPos, pDeviceBuffer, peakRangeStd);
 
 		//MEMORY FROM HOST TO DEVICE FOR OUTPUT
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayStd, devicearrayStd, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
-		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		cudaDeviceSynchronize();
 		
 		//OUTPUT

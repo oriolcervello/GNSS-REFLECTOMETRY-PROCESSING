@@ -121,7 +121,8 @@ void writeMaxstxt(int, Npp32f *, int *,Npp32f *, string);
 void writeIncoh(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *);
-void maxAndStd(int, Npp32f *, int, Npp32f *, Npp32f *, int *, Npp8u *);
+void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
+void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);
@@ -129,6 +130,7 @@ __global__ void applyDoppler(int, cufftComplex *, float, float,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
 __global__ void scale(int, cufftComplex *, int);
 __global__ void maskAndShift(char *, cuComplex *, int);
+__global__ void savePeak(int, cufftComplex *, cufftComplex *, int, int, int, int *);
 
 
 

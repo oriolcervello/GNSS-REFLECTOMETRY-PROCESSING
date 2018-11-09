@@ -219,18 +219,50 @@ void planifftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan
 
 }
 
-void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, Npp32f *arrayMaxs,
-	Npp32f *arraystd, int *arrayPos, Npp8u * pDeviceBuffer) {
-
-
+void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int fftsize, Npp32f *deviceArrayMaxs,
+	 int *deviceArrayPos, Npp8u * pDeviceBuffer) {
 
 	for (int i = 0; i < numofIncoherentSums; i++) {
 
-
-		nppsMaxIndx_32f(&dataIncoherentSum[i*fftsize], fftsize, &arrayMaxs[i], &arrayPos[i], pDeviceBuffer);
-		nppsStdDev_32f(&dataIncoherentSum[i*fftsize], fftsize, &arraystd[i], pDeviceBuffer);
-
+		nppsMaxIndx_32f(&deviceDataIncoherentSum[i*fftsize], fftsize, &deviceArrayMaxs[i], &deviceArrayPos[i], pDeviceBuffer);
 	}
+	cudaDeviceSynchronize();
+}
+
+
+void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
+	Npp32f *deviceArraystd, int *arrayPos, Npp8u * pDeviceBuffer, int peakRange) {
+
+	int leftPeakIndex, rightPeakIndex, stdLength;
+
+	for (int i = 0; i < numofIncoherentSums; i++) {
+		
+		leftPeakIndex = arrayPos[i] - peakRange/2;
+		rightPeakIndex = arrayPos[i] + peakRange/2;
+		
+		if (rightPeakIndex >= fftsize) {//case 2
+			rightPeakIndex = rightPeakIndex % fftsize;
+			stdLength = leftPeakIndex - rightPeakIndex;
+			nppsStdDev_32f(&dataIncoherentSum[i*fftsize+ rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+		}
+		else if (leftPeakIndex < 0) {//case 3
+			leftPeakIndex = fftsize + leftPeakIndex;
+			stdLength = leftPeakIndex-rightPeakIndex ;
+			nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+		}
+		else {//case 1
+			if (arrayPos[i] < fftsize / 2) {
+				stdLength = fftsize- rightPeakIndex;
+				nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+			}
+			else {
+				stdLength = leftPeakIndex;
+				nppsStdDev_32f(&dataIncoherentSum[i*fftsize], stdLength, &deviceArraystd[i], pDeviceBuffer);
+			}			
+		}		
+	}
+
+	
 	cudaDeviceSynchronize();
 
 
@@ -238,11 +270,6 @@ void maxAndStd(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize, 
 
 }
 
-/*Makes the complex conjugate of data2 and multiply point by point data1 and data2
-**data1 and data2 should be on device memory!!
-N: length of data
-data1: cufftComplex data set 1
-data1: cufftComplex data set 2*/
 __global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, int refsize)
 {
 	cufftComplex aux;
@@ -295,6 +322,38 @@ __global__ void applyDoppler(int samples, cufftComplex *data, float freq, float 
 	}
 }
 
+__global__ void savePeak(int numOfFFT, cufftComplex *dataFromInv, cufftComplex *dataToSave, int peakSamplesToSave,
+	int quantOfIncohSumAve,int fftsize, int *arrayPos) {
+	int samplesToSave = numOfFFT * peakSamplesToSave;
+	int posOnIFFT,fftOfThePeak,indexOfArrayPos, leftPosMaxOnOneIFFT, posOnOneIFFT;//rightPosMaxOnOneIFFT;
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+	for (int i = index; i < samplesToSave; i += stride) {
+		fftOfThePeak = i / peakSamplesToSave;//num of FFT in dataFromInv
+		indexOfArrayPos = fftOfThePeak / quantOfIncohSumAve;//number of index in arrayPos
+
+		//rightPosMaxOnOneIFFT = (arrayPos[indexOfPos] + peakSamplesToSave / 2);
+		leftPosMaxOnOneIFFT = (arrayPos[indexOfArrayPos] - peakSamplesToSave / 2);//begining of data to save
+		posOnOneIFFT = leftPosMaxOnOneIFFT + (i%peakSamplesToSave);// sample of i in one fft
+
+		if (posOnOneIFFT >= fftsize) {
+			posOnIFFT = fftOfThePeak * fftsize + posOnOneIFFT%fftsize; //sample in the data from IFFT
+			dataToSave[i] = dataFromInv[posOnIFFT];
+			
+			//case 2
+		}
+		else if (posOnOneIFFT < 0) {
+			posOnIFFT = fftOfThePeak * fftsize + (fftsize+posOnOneIFFT);//sample in the data from IFFT
+			dataToSave[i] = dataFromInv[posOnIFFT];
+			//case 3
+		}
+		else {
+
+			dataToSave[i] = dataFromInv[posOnIFFT];//sample in the data from IFFT
+			//case 1
+		}
+	}
+}
 
 __global__ void inchoerentSum(int samplesInchoerentSum, cufftComplex *dataFromInv, Npp32f *dataStorageInocherentSum,
 	int quantofAverageIncoherent, int fftsize)
