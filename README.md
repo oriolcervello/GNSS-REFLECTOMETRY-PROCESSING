@@ -15,7 +15,7 @@ Project is still under development, further information and modifications will b
 
 -functions.cu: host and device functions
 
--extra/TextParse.cu: text parser
+-extra/TextParser.cu: text parser
 
 
 ## Installation of CUDA
