@@ -1,0 +1,25 @@
+*FFTSIZE 32768
+*NUMOFFFTS 20
+*QUANTINCOHAVER 4
+*OVERLAP 32
+*FSAMPLING 32736000
+*BLOCKSIZE 1024
+*PEAKRANGESTD 64
+*PEAKSAMPLESTOSAVE 311
+*QUANTDATALINES 4
+*DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32_100.bin
+*DATALINE datafiles/prn_L1CA_32_100.bin 10 654762 0 datafiles/prn_L1CA_32_100.bin
+*DATALINE datafiles/prn_L1CA_32_100.bin 5000 659752 0 datafiles/prn_L1CA_32_100.bin
+*DATALINE datafiles/prn_L1CA_32_100.bin 30000 684752 0 datafiles/prn_L1CA_32_100.bin
+
+
+*DATALINE prn_L1CA_32_100_fd_1e3.bin 0 654752 -1000 prn_L1CA_32_100.bin
+*DATALINE prn_L1CA_32_100.bin 0 654752 0 prn_L1CA_32_100.bin
+*DATALINE prn_L1CA_32_100_noisy.bin 0 654752 0 prn_L1CA_32_100.bin
+
+
+
+
+
+dades ha de ser divisible per (fft-size x quantofAverageIncoherent)
+i llargada*4 menor a (numofFFTs * (fftsize-overlap))+overlap
