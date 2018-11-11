@@ -41,6 +41,7 @@ You can build the program with the following comand:
 To run it, we will need to pass 2 arguments:
 1. input.ASE (or whatever name is your input configuration file with that format)
 2. number of datalines to process on that run
+
 Also on the PowerShell: (example: 1: input.ASE 2: 4 datalines)
 
     .\kernel input.ASE 4
