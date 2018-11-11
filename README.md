@@ -62,7 +62,7 @@ In this file you will need to fill each variable with the argument desired.
 
 Datalines should have this format: DataFileName BeginingOfData EndOfData DopplerFreq RefSignalFileName
 
-    *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32_100.bin
+    *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin
 
 
 ## Outputs
