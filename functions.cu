@@ -1,8 +1,8 @@
 ﻿#include"functions.cuh"
 #include "extra/TextParser.cuh"
 
-void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int* quantOfAverIncoh
-	, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames) {
+void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames) {
 
 	TextParser t(configFileName);
 
@@ -16,7 +16,12 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*overlap = t.getint();
 	TextParserSafeCall(t.seek("*FSAMPLING"));
 	*fSampling = t.getint();
-
+	TextParserSafeCall(t.seek("*BLOCKSIZE"));
+	*blockSize = t.getint();
+	TextParserSafeCall(t.seek("*PEAKRANGESTD"));
+	*peakRangeStd = t.getint();
+	TextParserSafeCall(t.seek("*PEAKSAMPLESTOSAVE"));
+	*peakSamplesToSave = t.getint();
 
 	TextParserSafeCall(t.seek("*QUANTDATALINES"));
 	if (t.getint() != numofDataLines) {
@@ -35,8 +40,8 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	}
 }
 
-void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling, int quantOfAverIncoh
-	,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames) {
+void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -53,6 +58,9 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Overlap: " << overlap << "\n";
 	cout << "FSampling: " << fSampling << "\n";
 	cout << "Quant of averg Inch.: " << quantOfAverIncoh << "\n";
+	cout << "Blok Size: " << blockSize << "\n";
+	cout << "Peak samples for the std: " << peakRangeStd << "\n";
+	cout << "Peak samples to save: " << peakSamplesToSave << "\n";
 
 	cout << "Num of data lines: " << numofDataLines << "\n";
 	cout << "Data lines: \n";

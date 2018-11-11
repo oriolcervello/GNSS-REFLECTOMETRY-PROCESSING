@@ -81,7 +81,7 @@ inline void __cudaSafeCall(cudaError err, const char *file, const int line)
 #ifdef CUDA_ERROR_CHECK
 	if (cudaSuccess != err)
 	{
-		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",
+		fprintf(stderr, "CudaSafeCall error in file '%s' in line %i : %s.\n",
 			__FILE__, __LINE__, cudaGetErrorString(err));
 		cudaDeviceReset();
 		exit(EXIT_FAILURE);
@@ -108,9 +108,9 @@ inline void __cudaCheckError(const char *file, const int line)
 }
 //END ERROR CHECK
 
-void readConfig(const char *, int, int *, int *, int *, int *, int*
+void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
 	,  int *, int *, int *, string *, string *);
-void checkInputConfig(int , const char **, int , int , int , int , int , int 
+void checkInputConfig(int , const char **, int , int , int , int , int , int, int, int, int
 	,  int *, int *, int *, string *, string *);
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);

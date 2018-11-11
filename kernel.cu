@@ -19,8 +19,7 @@ int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 	
 	//READ CONFIG FILE
-	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent;
-	int blockSize = 1024, peakRangeStd = 65, peakSamplesToSave = 311;
+	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	string *fileDataNames, *fileRefNames;
 	int *dataOffsetBeg, *dataOffsetEnd;
@@ -32,8 +31,8 @@ int main(int argc, const char* argv[]) {
 	dataOffsetEnd = new int[numofDataLines];
 	doppler = new int[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefNames);
-	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefNames);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefNames);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefNames);
 
 	//OTHER DECLARATIONS
 	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of complex data
@@ -57,10 +56,12 @@ int main(int argc, const char* argv[]) {
 	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd, *hostarrayMaxs, *hostarrayStd;
 	Npp8u * pDeviceBuffer;
 	
-	int const maxIter = 20;
-	long long read_elapsed_secs[maxIter],write_elapsed_secs[maxIter], elapsed_secs[maxIter];
+	long long *read_elapsed_secs,*write_elapsed_secs, *elapsed_secs;
 	
 	//ALLOCATE
+	read_elapsed_secs = new long long[numofDataLines];
+	write_elapsed_secs = new long long[numofDataLines];
+	elapsed_secs = new long long[numofDataLines];
 	hostBytesOfData = (char *)malloc(sizeof(char) * bytesToRead);
 	hostarrayPos = new int[inchoerentNumofFFT];
 	hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
@@ -86,6 +87,7 @@ int main(int argc, const char* argv[]) {
 	planfftFunction(fftsize, numofFFTs, overlap, &plan);
 	planfftFunction(fftsize, 1, 0, &planref);
 	planifftFunction(fftsize, numofFFTs, 0, &inverseplan);
+	cudaDeviceSynchronize();
 
 	//LOOP
 	for (i = 0; i < numofDataLines; i++) {
@@ -202,8 +204,8 @@ int main(int argc, const char* argv[]) {
 		
 		//OUTPUT
 		auto writeBeg = chrono::high_resolution_clock::now();
-		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, "Maximums.txt");
-		outputName = "PeaksIteration"+ to_string(i);
+		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, "results/Maximums.txt");
+		outputName = "results/PeaksIteration"+ to_string(i);
 		outputName = outputName + ".bin";
 		cout << outputName << "\n";
 		writedata(numofFFTs*peakSamplesToSave, hostDataFile1, outputName);
@@ -217,7 +219,7 @@ int main(int argc, const char* argv[]) {
 		elapsed_secs[i] = chrono::duration_cast<chrono::microseconds>(elapsed_total).count();
 	}
 
-	writetime(numofDataLines, "Times_op3.txt", read_elapsed_secs, write_elapsed_secs, elapsed_secs);
+	writetime(numofDataLines, "results/Times_op3.txt", read_elapsed_secs, write_elapsed_secs, elapsed_secs);
 
 	//FREE MEMORY
 	cufftSafeCall(cufftDestroy(plan));
@@ -244,6 +246,9 @@ int main(int argc, const char* argv[]) {
 	delete[] dataOffsetBeg;
 	delete[] dataOffsetEnd;
 	delete[] doppler;
-
+	delete[] read_elapsed_secs;
+	delete[] write_elapsed_secs;
+	delete[] elapsed_secs;
+	
 	return 0;
 }
