@@ -11,11 +11,11 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 ## Contents
 Project is still under development, further information and modifications will be added.
 
--main.cu
+-main.cu: main program
 
--functions.cu
+-functions.cu: host and device functions
 
--functions.cuh
+-extra/TextParse.cu: text parser
 
 
 ## Installation of CUDA
@@ -77,7 +77,7 @@ Datalines should have this format: DataFileName BeginingOfData EndOfData Doppler
 ## Outputs
 The results will be stored on results directory.
 
-There is a ReadMe.md on results directory.
+There is a ReadMe.md on /results directory.
 
 ## Licence
 You may find it in a specific licence file.
