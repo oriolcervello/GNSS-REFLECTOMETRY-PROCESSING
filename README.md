@@ -23,7 +23,7 @@ Insturctions:
 4. I recomend Personalized installation and just install CUDA option which is the CUDA itself and the Driver component if you want to update it. If you want to update drivers don't forget step 2.
 5. Ensure to have on Path the following ones:
 c:\program files\nvidia gpu computing toolkit\cuda\v10.0\libnvvp;
-c:\program files\gnuplot\bin;c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
+c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
 c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.15.26726\bin\hostx64\x64;
 
 Now CUDA should be working fine.
@@ -64,21 +64,29 @@ Datalines should have this format: DataFileName BeginingOfData EndOfData Doppler
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32_100.bin
 
 
-
 ## Outputs
 The results will be stored on results directory.
 
 The outputs are:
 
-·Maximums File:
+Maximums File:
+
   Here are maximum value and position, the std and doppler of each dataline.
-·PeakIterationX.bin:
+
+PeakIterationX.bin:
+
   Peaks and surrounding of the correlation of each coherent FFT.
+
   One file per dataline. X = num of dataline
+
   Information is stored in binary and ar complex floats (32bits real + 32 bits iamginary) stored as:
+
   Re1 Co1 Re2 Co2 .... Re311 Co311 (311 becouse it was decleared at PEAKSAMPLESTOSAVE, then the following peak) Re1 Co1 ...
+
   Find in others how to read/plot it.
-·Times:
+
+Times:
+
   Times of comutation in microseconds per dataline.
 
 ## Licence
