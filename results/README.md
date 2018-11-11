@@ -1,10 +1,10 @@
 Here will be stored the results
 
-###Maximums File:
+### Maximums File:
 
 Here are maximum value and position, the std and doppler of each dataline.
 
-###PeakIterationX.bin:
+### PeakIterationX.bin:
 
 Peaks and surrounding of the correlation of each coherent FFT.
 
@@ -16,6 +16,6 @@ Re1 Co1 Re2 Co2 .... Re311 Co311 (311 becouse it was decleared at PEAKSAMPLESTOS
 
 Find in others directory how to read/plot it.
 
-###Times:
+### Times:
 
 Times of comutation in microseconds per dataline.
