@@ -10,6 +10,6 @@ To run it
 
     .\kernel
 
-## Ploting
+## Ploting.m
 
 This is a Matlab script that will allow you to read and plot the results file.
