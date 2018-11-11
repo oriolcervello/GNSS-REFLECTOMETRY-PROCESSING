@@ -14,7 +14,7 @@ Information is stored in binary and are complex floats (32bits real + 32 bits im
 
 Re1 Co1 Re2 Co2 .... Re311 Co311 (311 becouse it was decleared at PEAKSAMPLESTOSAVE, then the following peak) Re1 Co1 ...
 
-Find in others directory how to read/plot it.
+Find in /others directory how to read/plot.
 
 ### Times:
 
