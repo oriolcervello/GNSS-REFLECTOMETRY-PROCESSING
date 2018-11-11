@@ -1,6 +1,8 @@
 # GNSS-REFLECTOMETRY-PROCESSING
 
-This program is used to process GNSS-R signals using the GPU to accelerate the computation time. 
+The main goal of the project is to process reflected GNSS signals to obtain Earth measurements.
+This program is using the GPU to accelerate the computation time. For a input signal os a GNSS reflected signal
+makes the cross-correlation and gives as output all the information of the peak of correlation.
 
 All the contents were developed for the [Passive Remote Sensing Laboratory (RSLab)](http://www.tsc.upc.edu/rslab/Passive%20Remote%20Sensing/welcome) of the [Universitat Politècnica de Catalunya (UPC)](http://www.upc.edu/?set_language=en).
 
