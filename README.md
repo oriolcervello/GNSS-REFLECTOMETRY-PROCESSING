@@ -69,11 +69,11 @@ The results will be stored on results directory.
 
 The outputs are:
 
-Maximums File:
+-Maximums File:
 
   Here are maximum value and position, the std and doppler of each dataline.
 
-PeakIterationX.bin:
+-PeakIterationX.bin:
 
   Peaks and surrounding of the correlation of each coherent FFT.
 
@@ -85,7 +85,7 @@ PeakIterationX.bin:
 
   Find in others how to read/plot it.
 
-Times:
+-Times:
 
   Times of comutation in microseconds per dataline.
 
