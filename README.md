@@ -12,8 +12,11 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 Project is still under development, further information and modifications will be added.
 
 -main.cu
+
 -functions.cu
+
 -functions.cuh
+
 
 ## Installation of CUDA
 
