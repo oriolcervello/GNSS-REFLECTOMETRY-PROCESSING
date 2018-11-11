@@ -204,7 +204,7 @@ int main(int argc, const char* argv[]) {
 		
 		//OUTPUT
 		auto writeBeg = chrono::high_resolution_clock::now();
-		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, "results/Maximums.txt");
+		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, doppler[i],"results/Maximums.txt");
 		outputName = "results/PeaksIteration"+ to_string(i);
 		outputName = outputName + ".bin";
 		cout << outputName << "\n";

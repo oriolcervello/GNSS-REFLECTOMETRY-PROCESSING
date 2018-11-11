@@ -144,7 +144,7 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 	else cout << "Unable to open file\n";
 }
 
-void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,string name) {
+void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,int doppler,string name) {
 
 	ofstream myfile;
 	myfile.open(name, ios::app);
@@ -152,7 +152,7 @@ void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarraySt
 	{
 		for (int ii = 0; ii < N; ii++)
 		{
-			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << " STD: " << hostarrayStd[ii] << "\n";
+			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << " STD: " << hostarrayStd[ii]<< " Doppler: " << doppler<< "\n";
 
 		}
 		myfile << "\n --------------------------------------------------------------------- \n\n";
