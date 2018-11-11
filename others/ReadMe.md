@@ -1,4 +1,4 @@
-## DeviceProperties.cu
+### DeviceProperties.cu
 
 In this File you will be able to check you GPU properties. Specially Maximum Threads per block.
 
@@ -10,6 +10,6 @@ To run it
 
     .\kernel
 
-## Ploting.m
+### Ploting.m
 
 This is a Matlab script that will allow you to read and plot the results file.
