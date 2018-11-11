@@ -77,7 +77,7 @@ Datalines should have this format: DataFileName BeginingOfData EndOfData Doppler
 ## Outputs
 The results will be stored on results directory.
 
-There is a ReadMe.md on directory.
+There is a ReadMe.md on results directory.
 
 ## Licence
 You may find it in a specific licence file.
