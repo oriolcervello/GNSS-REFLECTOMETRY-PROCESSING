@@ -1,7 +1,7 @@
 # GNSS-REFLECTOMETRY-PROCESSING
 
 The main goal of the project is to process reflected GNSS signals to obtain Earth measurements.
-This program is using the GPU to accelerate the computation time. For a input signal os a GNSS reflected signal
+This program is using the GPU to accelerate the computation time. For a input signal of a GNSS reflected signal
 makes the cross-correlation and gives as output all the information of the peak of correlation.
 
 All the contents were developed for the [Passive Remote Sensing Laboratory (RSLab)](http://www.tsc.upc.edu/rslab/Passive%20Remote%20Sensing/welcome) of the [Universitat Politècnica de Catalunya (UPC)](http://www.upc.edu/?set_language=en).
@@ -10,6 +10,10 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 
 ## Contents
 Project is still under development, further information and modifications will be added.
+
+-main.cu
+-functions.cu
+-functions.cuh
 
 ## Installation of CUDA
 
@@ -38,7 +42,7 @@ To build the program open the directory on the Powershell.
 
 You can build the program with the following comand:
 
-    nvcc extra/TextParser.cu functions.cu kernel.cu -lnpps -lcufft -o kernel
+    nvcc extra/TextParser.cu functions.cu main.cu -lnpps -lcufft -o main
 
 To run it, we will need to pass 2 arguments:
 1. input.ASE (or whatever name is your input configuration file with that format)
