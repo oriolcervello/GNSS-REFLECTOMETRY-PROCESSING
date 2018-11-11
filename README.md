@@ -53,7 +53,7 @@ To run it, we will need to pass 2 arguments:
 
 Also on the PowerShell: (example: 1: input.ASE 2: 4 datalines)
 
-    .\kernel input.ASE 4
+    .\main input.ASE 4
 
 
 ## Configuration File (input.ASE)
