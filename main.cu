@@ -94,30 +94,33 @@ int main(int argc, const char* argv[]) {
 		
 		auto Begin = std::chrono::high_resolution_clock::now();
 		//READ DATA
-		readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);
-		readdata(fftsize - overlap,0, hostDataFile2, fileRefNames[i]);
-
-		/*if (dataOffsetEnd[i] - dataOffsetBeg[i] > bytesToRead) { cout << "Indices of reading in config file exceed bytesToRead decleared"; }
-		if ((dataOffsetEnd[i] - dataOffsetBeg[i])%(fftsize*quantofAverageIncoherent)!=0) {
-		cout << "Warning length of data won't complete last incho sum in DATALINE: "<<i<<"\n"; }
-		readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i],bytesToRead, hostBytesOfData, fileNames[i]);*/
+		/*readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);*/
+		readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i],bytesToRead, hostBytesOfData, fileDataNames[i]);
+		readdata(fftsize - overlap, 0, hostDataFile2, fileRefNames[i]);
 		auto elapsed_read = chrono::high_resolution_clock::now() - Begin;
 
-		CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
+		/*CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));*/
 		CudaSafeCall(cudaMemcpy(deviceDataFile2, hostDataFile2, sizeof(cufftComplex)*(fftsize - overlap), cudaMemcpyHostToDevice));
-		/*CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));*/
+		CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
 		cudaDeviceSynchronize();
 		
 		//CHECK: READED DATA 
 		//writedata(samplesOfSignal/2, hostDataFile1, "rawsin.txt");
 		//writedata(fftsize- overlap, hostDataFile2, "rawsin2.txt");
-
+		
 		//MASK AND SHIFT
-		/*numBlocks = (bytesToRead + blockSize - 1) / blockSize;
+		numBlocks = (bytesToRead + blockSize - 1) / blockSize;
 		maskAndShift << <numBlocks, blockSize >> > (deviceBytesOfData, deviceDataFile1, bytesToRead);
 		CudaCheckError();
 		cudaDeviceSynchronize();
-		*/
+		
+		//CHECK: RAW DATA 
+		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*(dataOffsetEnd[i] - dataOffsetBeg[i])*4, cudaMemcpyDeviceToHost));
+		//cudaDeviceSynchronize();
+		//writedata((dataOffsetEnd[i] - dataOffsetBeg[i])*4, hostDataFile1, "rawdata.bin");
+
+		
+
 		//MULTIPLY BY DOPPLER
 		samplePhaseMantain = (i * fftsize*numofFFTs);// %fSampling;----
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;

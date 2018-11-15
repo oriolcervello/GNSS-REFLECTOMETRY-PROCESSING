@@ -387,27 +387,61 @@ __global__ void scale(int samples, cufftComplex *data, int fftsize)
 
 __global__ void maskAndShift(char *devicedata, cuComplex *Dcomplexdata, int totalBytes)
 {
-	unsigned k;
+	unsigned char k, aux;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < totalBytes; i += stride) {
+		/*
+		k = (unsigned char)(devicedata[i]);
+		Dcomplexdata[i * 4 + 0].x = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 0].y = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 1].x = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 1].y = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 2].x = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 2].y = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 3].x = 2 * (k % 2) - 1;
+		k = k / 2;
+		Dcomplexdata[i * 4 + 3].y = 2 * (k % 2) - 1;
+		*/
+		k = (unsigned char)(devicedata[i]);
+		
+		aux = k & ((unsigned) 1);
+		aux = aux >> 0;
+		Dcomplexdata[i * 4 + 0].x = float(2 * (aux) - 1);
 
-		k = (unsigned)(devicedata[i]);
-		Dcomplexdata[i * 4 + 3].y = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 3].x = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 2].y = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 2].x = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 1].y = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 1].x = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 0].y = (k % 2);
-		k = k / 2;
-		Dcomplexdata[i * 4 + 0].x = (k % 2);
+
+		aux = k & ((unsigned)(1<<1));
+		aux = aux >> 1;
+
+		
+		Dcomplexdata[i * 4 + 0].y = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 2));
+		aux = aux >> 2;
+		Dcomplexdata[i * 4 + 1].x = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 3));
+		aux = aux >> 3;
+		Dcomplexdata[i * 4 + 1].y = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 4));
+		aux = aux >> 4;
+		Dcomplexdata[i * 4 + 2].x = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 5));
+		aux = aux >> 5;
+		Dcomplexdata[i * 4 + 2].y = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 6));
+		aux = aux >> 6;
+		Dcomplexdata[i * 4 + 3].x = float(2 * (aux)-1);
+		aux = k & ((unsigned)(1 << 7));
+		aux = aux >> 7;
+		Dcomplexdata[i * 4 + 3].y = float(2 * (aux)-1);
+
+
+
 
 
 	}
