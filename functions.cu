@@ -2,7 +2,7 @@
 #include "extra/TextParser.cuh"
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
-	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames) {
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmspan, int *ddmnumdiv) {
 
 	TextParser t(configFileName);
 
@@ -22,6 +22,13 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*peakRangeStd = t.getint();
 	TextParserSafeCall(t.seek("*PEAKSAMPLESTOSAVE"));
 	*peakSamplesToSave = t.getint();
+	TextParserSafeCall(t.seek("*REFFILENAME"));
+	*fileRefNames = t.getword();
+	TextParserSafeCall(t.seek("*DDMFREQSPAN"));
+	*ddmspan = t.getint();
+	TextParserSafeCall(t.seek("*DDMNUMDIVISIONS"));
+	*ddmnumdiv = t.getint();
+
 
 	TextParserSafeCall(t.seek("*QUANTDATALINES"));
 	if (t.getint() != numofDataLines) {
@@ -36,12 +43,12 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		dataOffsetBeg[i] = t.getint();
 		dataOffsetEnd[i] = t.getint();
 		doppler[i] = t.getint();
-		fileRefNames[i] = t.getword();
+		
 	}
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
-	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames) {
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string fileRefNames, int ddmspan, int ddmnumdiv) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -61,6 +68,10 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Blok Size: " << blockSize << "\n";
 	cout << "Peak samples for the std: " << peakRangeStd << "\n";
 	cout << "Peak samples to save: " << peakSamplesToSave << "\n";
+	cout << "Ref File Name: " << fileRefNames << "\n";
+	cout << "DDM span: " << ddmspan << "\n";
+	cout << "DDM num of div: " << ddmnumdiv << "\n";
+
 
 	cout << "Num of data lines: " << numofDataLines << "\n";
 	cout << "Data lines: \n";
@@ -68,8 +79,7 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
 		cout << dataOffsetEnd[i] << "  ";
-		cout << doppler[i] << " ";
-		cout << fileRefNames[i] << "\n";
+		cout << doppler[i] << "\n";
 
 	}
 
@@ -168,28 +178,41 @@ void writedata(int N, cufftComplex *data1, string name) {
 	myfile.open(name, ios::binary);
 	if (myfile.is_open())
 	{
-		for (int ii = 0; ii < N; ii++)
+
+
+		myfile.write((char*)data1, N*sizeof(cufftComplex));
+		
+		/*for (int ii = 0; ii < N; ii++)
 		{
 			
 			myfile.write((char*)&data1[ii].x, sizeof(float));
 			myfile.write((char*)&data1[ii].y, sizeof(float));
-		}
+		}*/
 		myfile.close();
 	}
 
 	else cout << "Unable to open file\n";
 }
 
-void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime) {
+void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime
+	, long long *mask_elapsed_secs, long long *doppler_elapsed_secs, 
+	long long *fft_elapsed_secs, long long *mult_elapsed_secs, long long *ifft_elapsed_secs, long long *scale_elapsed_secs,
+	long long *incho_elapsed_secs, long long *max_elapsed_secs, long long *savep_elapsed_secs, long long *std_elapsed_secs) {
 
 	ofstream myfile;
 	myfile.open(name);
 	if (myfile.is_open())
 	{
-		myfile << "Atempt\t\tReadT.\t\tWriteT.\t\tLoopT." << "\n";
+		myfile << "Atempt\t\tReadT.\t\tMask\t\tDoppler\t\tFFT\t\tMul\t\tIFFT\t\tScale\t\tIncoh\t\tMax\t\tSaveP.\t\tSTD\t\tWriteT.\t\tLoopT." << "\n";
 		for (int ii = 0; ii < N; ii++)
 		{
-			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << writetime[ii] << "\t\t" << looptime[ii] << "\n";
+			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << mask_elapsed_secs[ii] << "\t\t"
+				<< doppler_elapsed_secs[ii] << "\t\t"
+				 << fft_elapsed_secs[ii] << "\t\t" << mult_elapsed_secs[ii] << "\t\t"
+				 << ifft_elapsed_secs[ii] << "\t\t" << scale_elapsed_secs[ii] << "\t\t"
+				 << incho_elapsed_secs[ii] << "\t\t" << max_elapsed_secs[ii] << "\t\t"
+				 << savep_elapsed_secs[ii] << "\t\t" << std_elapsed_secs[ii] << "\t\t"
+				<< writetime[ii] << "\t\t" << looptime[ii] << "\n";
 
 		}
 		myfile.close();

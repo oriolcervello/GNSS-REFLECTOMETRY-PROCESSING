@@ -109,9 +109,9 @@ inline void __cudaCheckError(const char *file, const int line)
 //END ERROR CHECK
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
-	,  int *, int *, int *, string *, string *);
+	,  int *, int *, int *, string *, string *,int *, int *);
 void checkInputConfig(int , const char **, int , int , int , int , int , int, int, int, int
-	,  int *, int *, int *, string *, string *);
+	,  int *, int *, int *, string *, string , int , int );
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
 void readdata(int,int , cufftComplex *, string);
@@ -119,7 +119,8 @@ void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
 void writeMaxs(int, Npp32f *, int *,Npp32f *,int, string);
 void writeIncoh(int, cuComplex *, string);
-void writetime(int, string, long long *, long long *, long long *);
+void writetime(int, string, long long *, long long *, long long *, long long *, long long *, long long *,
+	long long *, long long *, long long *, long long *, long long *, long long *, long long *);
 void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
 void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int);
 

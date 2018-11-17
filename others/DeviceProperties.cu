@@ -24,6 +24,9 @@ int main() {
 		fprintf(stderr, "Device %i ", i);
 		fprintf(stderr, ":\n  Name: %s \n", aa.name);
 		fprintf(stderr, "  maxThreadsPerBlock: %i \n", aa.maxThreadsPerBlock);
+		fprintf(stderr, "  max dim of block of x: %i \n", aa.maxThreadsDim[0]);
+		fprintf(stderr, "  max dim of block of y: %i \n", aa.maxThreadsDim[1]);
+		
 		
 		size_t freeMem, totalMem;
 
