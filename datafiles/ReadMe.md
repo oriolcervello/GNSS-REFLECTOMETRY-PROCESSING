@@ -7,3 +7,5 @@ For adding an offset just add it to the beggining and end of the data in the DAT
 
 Num of FFTs has to be divisivable with quantofAverageIncoherent
 
+In the ref/ directory will be the reference signals.
+In the examples_in_float/ directory will be the examples of signals in float and instructions to set the program to read files of floats as input data.
