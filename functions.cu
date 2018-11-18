@@ -106,7 +106,7 @@ void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 		}
 		myfile.close();
 	}
-	else cout << "Unable to open file";
+	else cout << "Unable to open file of floats for reading " << name << "\n";
 }
 
 void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, string name)
@@ -125,11 +125,11 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, str
 				
 		myfile.close();
 		if(length< bytesToRead){
-			cout << bytesToRead- length << "Warning: length smaller than bytesToRead, Bytes filled with 0 \n";
+			cout << bytesToRead- length << "Warning: length smaller than bytesToRead, Bytes filled with 0 \n Last/s incoherents will be incomplete \n";
 			memset(&data[length], 0, bytesToRead - length);
 		}
 	}
-	else cout << "Unable to open file";
+	else cout << "Unable to open file of Real Data for reading " << name << "\n";
 }
 
 
@@ -151,7 +151,7 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 		myfile.close();
 	}
 
-	else cout << "Unable to open file\n";
+	else cout << "Unable to open file of incoh for writting " << name << "\n";
 }
 
 void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,int doppler,string name) {
@@ -169,7 +169,7 @@ void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarraySt
 		myfile.close();
 	}
 
-	else cout << "Unable to open file\n";
+	else cout << "Unable to open file of Maxs " << name << "\n";
 }
 
 void writedata(int N, cufftComplex *data1, string name) {
@@ -191,7 +191,7 @@ void writedata(int N, cufftComplex *data1, string name) {
 		myfile.close();
 	}
 
-	else cout << "Unable to open file\n";
+	else cout << "Unable to open file of data to write " << name << "\n";
 }
 
 void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime
@@ -218,7 +218,7 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 		myfile.close();
 	}
 
-	else cout << "Unable to open file";
+	else cout << "Unable to open file of times "<<name<<"\n";
 }
 
 void planfftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan) {
@@ -262,7 +262,7 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 	Npp32f *deviceArraystd, int *arrayPos, Npp8u * pDeviceBuffer, int peakRange) {
 
 	int leftPeakIndex, rightPeakIndex, stdLength;
-
+	stdLength = (fftsize / 2) - ((peakRange) / 2)-1;
 	for (int i = 0; i < numofIncoherentSums; i++) {
 		
 		leftPeakIndex = arrayPos[i] - peakRange/2;
@@ -270,21 +270,21 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 		
 		if (rightPeakIndex >= fftsize) {//case 2
 			rightPeakIndex = rightPeakIndex % fftsize;
-			stdLength = leftPeakIndex - rightPeakIndex;
+			//stdLength = leftPeakIndex - rightPeakIndex;
 			nppsStdDev_32f(&dataIncoherentSum[i*fftsize+ rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
 		}
 		else if (leftPeakIndex < 0) {//case 3
 			leftPeakIndex = fftsize + leftPeakIndex;
-			stdLength = leftPeakIndex-rightPeakIndex ;
+			//stdLength = leftPeakIndex-rightPeakIndex ;
 			nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
 		}
 		else {//case 1
 			if (arrayPos[i] < fftsize / 2) {
-				stdLength = fftsize- rightPeakIndex;
+				//stdLength = fftsize- rightPeakIndex;
 				nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
 			}
 			else {
-				stdLength = leftPeakIndex;
+				//stdLength = leftPeakIndex;
 				nppsStdDev_32f(&dataIncoherentSum[i*fftsize], stdLength, &deviceArraystd[i], pDeviceBuffer);
 			}			
 		}		
