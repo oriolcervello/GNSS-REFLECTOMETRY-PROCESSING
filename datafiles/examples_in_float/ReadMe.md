@@ -1,4 +1,4 @@
-Instructions to read float files will be added.
+Instructions to read files of data in float will be added.
 
 This are files of example:
 
