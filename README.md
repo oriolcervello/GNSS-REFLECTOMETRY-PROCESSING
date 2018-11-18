@@ -73,7 +73,7 @@ Datalines should have this format: DataFileName BeginingOfData EndOfData Doppler
 
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin
 
-The BeginingOfData and EndOfData numbers are bytes. In datafiles/ directory you will find how the data is structured and how to change the input method.
+The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and how to change the input method.
 
 ## Outputs
 The results will be stored on results directory.
