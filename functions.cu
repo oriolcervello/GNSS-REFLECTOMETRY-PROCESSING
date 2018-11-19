@@ -127,7 +127,7 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, str
 				
 		myfile.close();
 		if(length< bytesToRead){
-			cout << bytesToRead- length << "Warning: length smaller than bytesToRead, Bytes filled with 0 \n Last/s incoherents will be incomplete \n";
+			cout << "Warning: length smaller than bytesToRead, " << bytesToRead - length<<" Bytes filled with 0 \n Last/s incoherents will be incomplete \n";
 			memset(&data[length], 0, bytesToRead - length);
 		}
 	}
