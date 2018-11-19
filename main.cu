@@ -106,8 +106,11 @@ int main(int argc, const char* argv[]) {
 	planifftFunction(fftsize, numofFFTs, 0, &inverseplan);
 	cudaDeviceSynchronize();
 
-	//READ AND EXTEND REF SIGNAL
+	//READ, EXTEND AND FFT OF REF SIGNAL
 	readdata(fftsize - overlap, 0, hostDataFile2, fileRefName);
+
+	//writedata(fftsize - overlap, hostDataFile2, "rawref2.bin");
+
 	CudaSafeCall(cudaMemcpy(deviceDataFile2, hostDataFile2, sizeof(cufftComplex)*(fftsize - overlap), cudaMemcpyHostToDevice));
 	cudaDeviceSynchronize();
 	
@@ -127,8 +130,6 @@ int main(int argc, const char* argv[]) {
 		/*readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);*/
 		readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i],bytesToRead, hostBytesOfData, fileDataNames[i]);
 		
-		
-
 		/*CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));*/
 		CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
 		cudaDeviceSynchronize();
@@ -141,12 +142,11 @@ int main(int argc, const char* argv[]) {
 		CudaCheckError();
 		cudaDeviceSynchronize();
 		auto mask_elapsed = chrono::high_resolution_clock::now() - maskbeg;
+		
 		//CHECK: RAW DATA 
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*(dataOffsetEnd[i] - dataOffsetBeg[i])*4, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
 		//writedata((dataOffsetEnd[i] - dataOffsetBeg[i])*4, hostDataFile1, "rawdata.bin");
-
-		
 
 		//MULTIPLY BY DOPPLER
 		auto dopplerbeg = std::chrono::high_resolution_clock::now();

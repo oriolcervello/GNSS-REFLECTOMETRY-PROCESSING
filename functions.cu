@@ -89,12 +89,14 @@ void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 {
 	ifstream myfile;
 	myfile.open(name, ios::binary);
-	float num1,num2;
+	//float num1,num2;
 	
 	if (myfile.is_open())
 	{
-		myfile.seekg(offsetFromBeg*2 * sizeof(float));
-		int k = 0;
+		myfile.seekg(offsetFromBeg* sizeof(cufftComplex));
+		
+		myfile.read((char*)data, length*sizeof(cufftComplex));
+		/*int k = 0;
 		while (k < length)
 		{
 			
@@ -103,7 +105,7 @@ void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 			data[k].x = num1;
 			data[k].y =  num2;
 			k++;
-		}
+		}*/
 		myfile.close();
 	}
 	else cout << "Unable to open file of floats for reading " << name << "\n";
@@ -112,7 +114,7 @@ void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, string name)
 {
 	if (length > bytesToRead) {
-		cout << "Error: iput length bigger than bytesToRead";
+		cout << "Error: iput length bigger than bytesToRead\n";
 		exit(0);
 	}
 
@@ -326,12 +328,14 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 __global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain)
 {
 	cufftComplex aux, aux2;
+	float angle;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		aux2.x=cos(2.0*PI*(i+ samplePhaseMantain)*(float(freqDoppler)/float(fs)));
-		aux2.y= sin(2.0*PI*(i+ samplePhaseMantain)*(float(freqDoppler) / float(fs)));
-
+		angle = 2.0*PI*float(i + samplePhaseMantain)*((freqDoppler) / (fs));
+		aux2.x=cos(angle);
+		aux2.y= sin(angle);
+		
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 		aux.x = data[i].x*aux2.x - data[i].y*aux2.y;
 		aux.y = data[i].x*aux2.y + data[i].y*aux2.x;

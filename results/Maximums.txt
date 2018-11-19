@@ -1,2 +1,88 @@
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18236e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84105e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
 
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18237e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84106e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18236e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84105e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18237e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84106e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18236e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84105e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18237e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84106e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18236e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84105e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
+
+Pos: 26554 Value: 5.07541e+07 STD: 8.12805e+06 Doppler: 517
+Pos: 26554 Value: 4.10407e+07 STD: 7.98636e+06 Doppler: 517
+Pos: 26555 Value: 4.893e+07 STD: 8.08015e+06 Doppler: 517
+Pos: 26555 Value: 5.18237e+07 STD: 7.87808e+06 Doppler: 517
+Pos: 26555 Value: 4.27395e+07 STD: 8.01954e+06 Doppler: 517
+Pos: 465 Value: 3.84106e+07 STD: 7.39735e+06 Doppler: 517
+Pos: 26555 Value: 5.24037e+07 STD: 7.92498e+06 Doppler: 517
+Pos: 26555 Value: 4.94392e+07 STD: 8.0983e+06 Doppler: 517
+
+ --------------------------------------------------------------------- 
 
