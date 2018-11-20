@@ -55,11 +55,12 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 		exit(0);
 	}
 
-	cout << "\n" << "Quant of args: " << argc << "\n";
+	cout << "\n" << "-ARGS: " << argc << "\n";
 	cout << "First: " << argv[0] << "\n";
 	cout << "Second: " << argv[1] << "\n";
 	cout << "Third: " << argv[2] << "\n\n";
 
+	cout << "-INPUTS:\n";
 	cout << "FFT Size: " << fftsize << "\n";
 	cout << "Num. of FFT: " << numofFFts << "\n";
 	cout << "Overlap: " << overlap << "\n";
@@ -247,6 +248,22 @@ void planifftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan
 	int batch = numofFFTs;// numofFFTs;                      // --- Number of batched executions
 	cufftSafeCall(cufftPlanMany(plan, rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, batch));
 
+}
+
+size_t planMemEstimate(int fftsize, int numofFFTs, int overlap) {
+
+	int rank = 1;                           // --- 1D FFTs
+	int n[] = { fftsize };                 // --- Size of the Fourier transform
+	int istride = 1, ostride = 1;           // --- Distance between two successive input/output elements
+	int idist = fftsize, odist = fftsize - overlap;// (DATASIZE / 2 + 1); // --- Distance between batches
+	int inembed[] = { 0 };                  // --- Input size with pitch (ignored for 1D transforms)
+	int onembed[] = { 0 };                  // --- Output size with pitch (ignored for 1D transforms)
+	int batch = numofFFTs;// numofFFTs;                      // --- Number of batched executions
+	size_t workSize;
+	cufftSafeCall(cufftEstimateMany( rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, batch,&workSize));
+
+	cout << "cufft plan aprox buffer: " << workSize<< " bytes\n";
+	return workSize;
 }
 
 void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int fftsize, Npp32f *deviceArrayMaxs,

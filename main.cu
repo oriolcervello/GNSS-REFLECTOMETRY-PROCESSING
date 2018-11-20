@@ -94,9 +94,17 @@ int main(int argc, const char* argv[]) {
 	CudaSafeCall(cudaMalloc((void **)(&pDeviceBuffer), nBufferSize));
 	cudaDeviceSynchronize();
 	
-	cout << "GPU mem used: " << sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap + 
+	size_t freeMem, totalMem;
+	cudaMemGetInfo(&freeMem, &totalMem);
+	cout<< "\n-MEMORY: \n";
+	//fprintf(stderr, "   Free = %zu, Total = %zu\n", freeMem, totalMem);
+	cout<< "Total GPU mem: "<< totalMem <<" bytes\n";
+	size_t planBuffer = planMemEstimate(fftsize, numofFFTs, overlap);
+	long long allocatedMem = sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap +
 		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*fftsize + sizeof(Npp32f)*inchoerentNumofFFT*fftsize
-		+ sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT+ nBufferSize <<" bytes\n";
+		+ sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + nBufferSize;
+	cout << "GPU mem allocated: " << allocatedMem <<" bytes\n";
+	cout << "GPU total aprox mem used: " << allocatedMem+ planBuffer <<" bytes\n\n";
 	
 	
 
@@ -280,13 +288,6 @@ int main(int argc, const char* argv[]) {
 		, max_elapsed_secs, savep_elapsed_secs, std_elapsed_secs);
 
 	//FREE MEMORY
-
-	size_t freeMem, totalMem;
-	cudaMemGetInfo(&freeMem, &totalMem);
-	fprintf(stderr, "  Memory: \n");
-	fprintf(stderr, "   Free = %zu, Total = %zu\n", freeMem, totalMem);
-
-
 	//cufftSafeCall(cufftDestroy(plan));
 	//cufftSafeCall(cufftDestroy(inverseplan));
 	cudaFree(deviceDataFile1);

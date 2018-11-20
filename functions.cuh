@@ -114,6 +114,7 @@ void checkInputConfig(int , const char **, int , int , int , int , int , int, in
 	,  int *, int *, int *, string *, string , int , int );
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
+size_t planMemEstimate(int, int, int);
 void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
