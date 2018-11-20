@@ -225,7 +225,6 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 
 void planfftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan) {
 
-
 	int rank = 1;                           // --- 1D FFTs
 	int n[] = { fftsize };                 // --- Size of the Fourier transform
 	int istride = 1, ostride = 1;           // --- Distance between two successive input/output elements
@@ -238,7 +237,7 @@ void planfftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan)
 }
 
 void planifftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan) {
-
+	
 	int rank = 1;                           // --- 1D FFTs
 	int n[] = { fftsize };                 // --- Size of the Fourier transform
 	int istride = 1, ostride = 1;           // --- Distance between two successive input/output elements

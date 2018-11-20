@@ -17,7 +17,7 @@ using namespace std;
 
 int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
-	
+
 	//READ CONFIG FILE
 	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave,ddmspan,ddmnumdiv;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
@@ -54,6 +54,8 @@ int main(int argc, const char* argv[]) {
 	cufftComplex *deviceDataFile1, *deviceDataFile2, *hostDataFile1, *hostDataFile2, *deviceDataToSave;
 	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd, *hostarrayMaxs, *hostarrayStd;
 	Npp8u * pDeviceBuffer;
+
+	cufftHandle plan, planref;
 	
 	long long *read_elapsed_secs,*write_elapsed_secs, *elapsed_secs, *mask_elapsed_secs, *doppler_elapsed_secs, 
 		 *fft_elapsed_secs, *mult_elapsed_secs,*ifft_elapsed_secs, *scale_elapsed_secs, *incho_elapsed_secs
@@ -94,17 +96,11 @@ int main(int argc, const char* argv[]) {
 	
 	cout << "GPU mem used: " << sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap + 
 		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*fftsize + sizeof(Npp32f)*inchoerentNumofFFT*fftsize
-		+ sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT<<" bytes\n";
+		+ sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT+ nBufferSize <<" bytes\n";
+	
 	
 
-	//FFT&IFFT PLANS
-	cufftHandle plan;
-	cufftHandle planref;
-	cufftHandle inverseplan;
-	planfftFunction(fftsize, numofFFTs, overlap, &plan);
-	planfftFunction(fftsize, 1, 0, &planref);
-	planifftFunction(fftsize, numofFFTs, 0, &inverseplan);
-	cudaDeviceSynchronize();
+
 
 	//READ, EXTEND AND FFT OF REF SIGNAL
 	readdata(fftsize - overlap, 0, hostDataFile2, fileRefName);
@@ -117,9 +113,14 @@ int main(int argc, const char* argv[]) {
 	numBlocks = (fftsize + blockSize - 1) / blockSize;
 	extendRefSignal << <numBlocks, blockSize >> > (fftsize, deviceDataFile2, fftsize - overlap);
 	CudaCheckError();
-	cudaDeviceSynchronize();
 
+
+	planfftFunction(fftsize, 1, 0, &planref);
+	cudaDeviceSynchronize();
 	cufftSafeCall(cufftExecC2C(planref, deviceDataFile2, deviceDataFile2, CUFFT_FORWARD));
+	cudaDeviceSynchronize();
+	cufftSafeCall(cufftDestroy(planref));
+
 
 
 	//LOOP
@@ -163,8 +164,11 @@ int main(int argc, const char* argv[]) {
 
 		//FFT
 		auto fftbeg = std::chrono::high_resolution_clock::now();
+		planfftFunction(fftsize, numofFFTs, overlap, &plan);
+		cudaDeviceSynchronize();
 		cufftSafeCall(cufftExecC2C(plan, deviceDataFile1, deviceDataFile1, CUFFT_FORWARD));
 		cudaDeviceSynchronize();
+		cufftSafeCall(cufftDestroy(plan));
 		auto fft_elapsed = chrono::high_resolution_clock::now() - fftbeg;
 
 		//CHECK: FFT (only for printing fft)
@@ -179,7 +183,6 @@ int main(int argc, const char* argv[]) {
 		CudaCheckError();
 		cudaDeviceSynchronize();
 		auto mult_elapsed = chrono::high_resolution_clock::now() - multbeg;
-
 		//CHECK: MULTIPLICATION (only for printing multiplication result)
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
@@ -187,8 +190,11 @@ int main(int argc, const char* argv[]) {
 		
 		//IFFT
 		auto ifftbeg = std::chrono::high_resolution_clock::now();
-		cufftSafeCall(cufftExecC2C(inverseplan, deviceDataFile1, deviceDataFile1, CUFFT_INVERSE));
+		planifftFunction(fftsize, numofFFTs, 0, &plan);
 		cudaDeviceSynchronize();
+		cufftSafeCall(cufftExecC2C(plan, deviceDataFile1, deviceDataFile1, CUFFT_INVERSE));
+		cudaDeviceSynchronize();
+		cufftSafeCall(cufftDestroy(plan));
 		auto ifft_elapsed = chrono::high_resolution_clock::now() - ifftbeg;
 
 		//SCALE (To take back original signal it has to be devided for the fftsize)
@@ -274,9 +280,15 @@ int main(int argc, const char* argv[]) {
 		, max_elapsed_secs, savep_elapsed_secs, std_elapsed_secs);
 
 	//FREE MEMORY
-	cufftSafeCall(cufftDestroy(plan));
-	cufftSafeCall(cufftDestroy(planref));
-	cufftSafeCall(cufftDestroy(inverseplan));
+
+	size_t freeMem, totalMem;
+	cudaMemGetInfo(&freeMem, &totalMem);
+	fprintf(stderr, "  Memory: \n");
+	fprintf(stderr, "   Free = %zu, Total = %zu\n", freeMem, totalMem);
+
+
+	//cufftSafeCall(cufftDestroy(plan));
+	//cufftSafeCall(cufftDestroy(inverseplan));
 	cudaFree(deviceDataFile1);
 	cudaFree(deviceDataFile2);
 	cudaFree(deviceIncoherentSum);
