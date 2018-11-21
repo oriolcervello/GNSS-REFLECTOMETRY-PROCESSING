@@ -389,12 +389,7 @@ __global__ void selectMaxs(int numOfFFT,int quantOfIncohSumAve, int ddmQuant, in
 			}
 
 
-
 		}
-
-
-
-
 
 	}
 }
