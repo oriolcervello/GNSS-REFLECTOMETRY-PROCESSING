@@ -2,7 +2,7 @@
 #include "extra/TextParser.cuh"
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
-	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmspan, int *ddmnumdiv) {
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant) {
 
 	TextParser t(configFileName);
 
@@ -24,10 +24,16 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*peakSamplesToSave = t.getint();
 	TextParserSafeCall(t.seek("*REFFILENAME"));
 	*fileRefNames = t.getword();
-	TextParserSafeCall(t.seek("*DDMFREQSPAN"));
-	*ddmspan = t.getint();
-	TextParserSafeCall(t.seek("*DDMNUMDIVISIONS"));
-	*ddmnumdiv = t.getint();
+	TextParserSafeCall(t.seek("*DDMFREQRES"));
+	*ddmRes = t.getint();
+	TextParserSafeCall(t.seek("*DDMNUMQUANT"));
+	*ddmQuant = t.getint();
+
+	if (*ddmQuant % 2 != 1) {
+		cout << "ERROR: DDM QUANT has to be odd: 1(original)+2n(symethric)\n";
+		exit(1);
+
+	}
 
 
 	TextParserSafeCall(t.seek("*QUANTDATALINES"));
@@ -48,7 +54,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
-	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string fileRefNames, int ddmspan, int ddmnumdiv) {
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string fileRefNames, int ddmRes, int ddmQuant) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -70,8 +76,8 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Peak samples for the std: " << peakRangeStd << "\n";
 	cout << "Peak samples to save: " << peakSamplesToSave << "\n";
 	cout << "Ref File Name: " << fileRefNames << "\n";
-	cout << "DDM span: " << ddmspan << "\n";
-	cout << "DDM num of div: " << ddmnumdiv << "\n";
+	cout << "DDM Res: " << ddmRes << "\n";
+	cout << "DDM Quant: " << ddmQuant << "\n";
 
 
 	cout << "Num of data lines: " << numofDataLines << "\n";
@@ -341,32 +347,65 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 }
 
 
-__global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain)
+__global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain,
+	int origSamples, int ddmQuant, int ddmRes, int fftsize)
 {
 	cufftComplex aux, aux2;
-	float angle;
+	float angle, freq, phasemantain;
+
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		angle = 2.0*PI*float(i + samplePhaseMantain)*((freqDoppler) / (fs));
-		aux2.x=cos(angle);
-		aux2.y= sin(angle);
-		
+		phasemantain = float((i % (origSamples)) + samplePhaseMantain);//origninal samples signal
+		freq = (freqDoppler)+((i / (origSamples))*(ddmRes)-ddmRes * (ddmQuant / 2));
+		angle = 2.0*PI*phasemantain*(freq / (fs));
+		aux2.x = cos(angle);
+		aux2.y = sin(angle);
+
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 		aux.x = data[i].x*aux2.x - data[i].y*aux2.y;
 		aux.y = data[i].x*aux2.y + data[i].y*aux2.x;
 
-		data[i].x= aux.x;
-		data[i].y= aux.y;
-		 
-	
+		data[i].x = aux.x;
+		data[i].y = aux.y;
+
+
 	}
 }
 
-__global__ void savePeak(int numOfFFT, cufftComplex *dataFromIFFT, cufftComplex *dataToSave, int peakSamplesToSave,
-	int quantOfIncohSumAve,int fftsize, int *arrayPos) {
+__global__ void selectMaxs(int numOfFFT,int quantOfIncohSumAve, int ddmQuant, int *arrayPos, Npp32f *deviceArrayMaxs) {
 
-	int samplesToSave = numOfFFT * peakSamplesToSave;
+	int step = numOfFFT / quantOfIncohSumAve,max=0;
+
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+	for (int i = index; i < step; i += stride) {
+
+		for (int j = i; j < step*ddmQuant; j = j + step) {
+			if (deviceArrayMaxs[j] > max) {
+				max = deviceArrayMaxs[j];
+				arrayPos[i] = arrayPos[j];
+
+			}
+
+
+
+		}
+
+
+
+
+
+	}
+}
+
+
+
+
+__global__ void savePeak(int numOfFFT, cufftComplex *dataFromIFFT, cufftComplex *dataToSave, int peakSamplesToSave,
+	int quantOfIncohSumAve,int fftsize, int *arrayPos,int ddmQuant) {
+
+	int samplesToSave = numOfFFT * peakSamplesToSave*ddmQuant;
 	int posOnIFFT,fftOfThePeak,indexOfArrayPos, leftPosMaxOnOneIFFT, posOnOneIFFT;//rightPosMaxOnOneIFFT;
 	
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -376,7 +415,7 @@ __global__ void savePeak(int numOfFFT, cufftComplex *dataFromIFFT, cufftComplex 
 		fftOfThePeak = i / peakSamplesToSave;//num of FFT in dataFromInv
 		indexOfArrayPos = fftOfThePeak / quantOfIncohSumAve;//number of index in arrayPos
 		//rightPosMaxOnOneIFFT = (arrayPos[indexOfPos] + peakSamplesToSave / 2);
-		leftPosMaxOnOneIFFT = arrayPos[indexOfArrayPos] - (peakSamplesToSave / 2);//begining of data to save
+		leftPosMaxOnOneIFFT = arrayPos[indexOfArrayPos % (numOfFFT / quantOfIncohSumAve)] - (peakSamplesToSave / 2);//begining of data to save
 		posOnOneIFFT = leftPosMaxOnOneIFFT + (i%peakSamplesToSave);// sample of i in one fft
 
 		if (posOnOneIFFT >= fftsize) {

@@ -19,7 +19,7 @@ int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 
 	//READ CONFIG FILE
-	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave,ddmspan,ddmnumdiv;
+	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave, ddmRes, ddmQuant;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	string *fileDataNames, fileRefName;
 	int *dataOffsetBeg, *dataOffsetEnd;
@@ -30,23 +30,24 @@ int main(int argc, const char* argv[]) {
 	dataOffsetEnd = new int[numofDataLines];
 	doppler = new int[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, &fileRefName, &ddmspan, &ddmnumdiv);
-	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmspan, ddmnumdiv);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, &fileRefName, &ddmRes, &ddmQuant);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant);
 
 	//OTHER DECLARATIONS
-	int samplesOfSignal = (numofFFTs * (fftsize-overlap))+overlap;//samples of complex data
-	int bytesToRead = samplesOfSignal/4;
-	if (samplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded toward negative infinity: samplesOfSignal%4!=0 \n "; }
-	int samplesWithOverlap= numofFFTs * fftsize;//total samples needed
+	int  originalSamplesOfSignal = (numofFFTs * (fftsize - overlap)) + overlap;//samples of complex data
+	int samplesOfSignal = originalSamplesOfSignal *ddmQuant;//samples of complex data
+	int bytesToRead = originalSamplesOfSignal /4;
+	if (originalSamplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded toward negative infinity: samplesOfSignal%4!=0 \n "; }
+	int samplesWithOverlap= (numofFFTs * fftsize)*ddmQuant;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
-	int inchoerentNumofFFT = numofFFTs/ quantofAverageIncoherent;
+	int inchoerentNumofFFT = (numofFFTs/ quantofAverageIncoherent)*ddmQuant;
 	if (numofFFTs % quantofAverageIncoherent != 0) {
 		cout << "Error: numofFFTs / quantofAverageIncoherent != 0\n ";
 		exit(-1);
 	}
 
 	string outputName;
-	int numBlocks, nBufferSize,i;
+	int numBlocks, nBufferSize,i,k;
 	unsigned long long samplePhaseMantain;
 
 	char *hostBytesOfData, *deviceBytesOfData;
@@ -84,7 +85,7 @@ int main(int argc, const char* argv[]) {
 	hostDataFile2 = (cufftComplex *)malloc(sizeof(cufftComplex) * fftsize);
 	CudaSafeCall(cudaMalloc(&deviceBytesOfData, sizeof(char)*bytesToRead));
 	CudaSafeCall(cudaMalloc(&deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap));
-	CudaSafeCall(cudaMalloc(&deviceDataToSave, sizeof(cufftComplex)*peakSamplesToSave*numofFFTs));
+	CudaSafeCall(cudaMalloc(&deviceDataToSave, sizeof(cufftComplex)*peakSamplesToSave*numofFFTs*ddmQuant));
 	CudaSafeCall(cudaMalloc(&deviceDataFile2, sizeof(cufftComplex)*fftsize));
 	CudaSafeCall(cudaMalloc(&deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize));
 	CudaSafeCall(cudaMalloc(&devicearrayPos, sizeof(int)*inchoerentNumofFFT));
@@ -152,6 +153,18 @@ int main(int argc, const char* argv[]) {
 		cudaDeviceSynchronize();
 		auto mask_elapsed = chrono::high_resolution_clock::now() - maskbeg;
 		
+		//EXTEND FOR DOPPLER
+		auto scalebeg = std::chrono::high_resolution_clock::now();
+		if (ddmQuant > 1) {
+			numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
+			extendRefSignal << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, originalSamplesOfSignal);
+			CudaCheckError();
+			cudaDeviceSynchronize();
+		}
+		auto scale_elapsed = chrono::high_resolution_clock::now() - scalebeg;
+
+
+
 		//CHECK: RAW DATA 
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*(dataOffsetEnd[i] - dataOffsetBeg[i])*4, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
@@ -161,7 +174,7 @@ int main(int argc, const char* argv[]) {
 		auto dopplerbeg = std::chrono::high_resolution_clock::now();
 		samplePhaseMantain = (i * fftsize*numofFFTs);// %fSampling;----
 		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
-		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain);
+		applyDoppler << <numBlocks, blockSize >> > (samplesOfSignal, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain,originalSamplesOfSignal,ddmQuant,ddmRes,fftsize);
 		CudaCheckError();
 		cudaDeviceSynchronize();
 		auto doppler_elapsed = chrono::high_resolution_clock::now() - dopplerbeg;
@@ -174,7 +187,9 @@ int main(int argc, const char* argv[]) {
 		auto fftbeg = std::chrono::high_resolution_clock::now();
 		planfftFunction(fftsize, numofFFTs, overlap, &plan);
 		cudaDeviceSynchronize();
-		cufftSafeCall(cufftExecC2C(plan, deviceDataFile1, deviceDataFile1, CUFFT_FORWARD));
+		for (k = 0; k < ddmQuant; k++) {
+			cufftSafeCall(cufftExecC2C(plan, &deviceDataFile1[k*originalSamplesOfSignal], &deviceDataFile1[k*originalSamplesOfSignal], CUFFT_FORWARD));
+		}
 		cudaDeviceSynchronize();
 		cufftSafeCall(cufftDestroy(plan));
 		auto fft_elapsed = chrono::high_resolution_clock::now() - fftbeg;
@@ -200,18 +215,20 @@ int main(int argc, const char* argv[]) {
 		auto ifftbeg = std::chrono::high_resolution_clock::now();
 		planifftFunction(fftsize, numofFFTs, 0, &plan);
 		cudaDeviceSynchronize();
-		cufftSafeCall(cufftExecC2C(plan, deviceDataFile1, deviceDataFile1, CUFFT_INVERSE));
+		for (k = 0; k < ddmQuant; k++) {
+			cufftSafeCall(cufftExecC2C(plan, &deviceDataFile1[k*originalSamplesOfSignal], &deviceDataFile1[k*originalSamplesOfSignal], CUFFT_INVERSE));
+		}
 		cudaDeviceSynchronize();
 		cufftSafeCall(cufftDestroy(plan));
 		auto ifft_elapsed = chrono::high_resolution_clock::now() - ifftbeg;
 
 		//SCALE (To take back original signal it has to be devided for the fftsize)
-		auto scalebeg = std::chrono::high_resolution_clock::now();
+		/*auto scalebeg = std::chrono::high_resolution_clock::now();
 		numBlocks = (samplesWithOverlap + blockSize - 1) / blockSize;		
 		scale << <numBlocks, blockSize >> > (samplesWithOverlap, deviceDataFile1, fftsize);
 		CudaCheckError();
 		cudaDeviceSynchronize();
-		auto scale_elapsed = chrono::high_resolution_clock::now() - scalebeg;
+		auto scale_elapsed = chrono::high_resolution_clock::now() - scalebeg;*/
 
 		//CHECK: IFFT 
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap, cudaMemcpyDeviceToHost)); 
@@ -229,7 +246,7 @@ int main(int argc, const char* argv[]) {
 		//CudaSafeCall(cudaMemcpy(hostDataFile1, deviceIncoherentSum, sizeof(Npp32f)*inchoerentNumofFFT*fftsize, cudaMemcpyDeviceToHost));
 		//cudaDeviceSynchronize();
 		//writeIncoh(inchoerentNumofFFT*fftsize, hostDataFile1, "incoh.bin");
-	
+		
 		//MAXIMUM
 		auto maxbeg = std::chrono::high_resolution_clock::now();
 		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pDeviceBuffer);
@@ -237,16 +254,31 @@ int main(int argc, const char* argv[]) {
 		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		auto max_elapsed = chrono::high_resolution_clock::now() - maxbeg;
+		cudaDeviceSynchronize();
 		
+	
+
+
 		//SAVE PEAKS
 		auto savepbeg = std::chrono::high_resolution_clock::now();
-		numBlocks = (numofFFTs*peakSamplesToSave + blockSize - 1) / blockSize;
-		savePeak << <numBlocks, blockSize >> > (numofFFTs, deviceDataFile1, deviceDataToSave, peakSamplesToSave, quantofAverageIncoherent, fftsize, devicearrayPos);
+		if (ddmQuant > 1) {
+			numBlocks = ((numofFFTs / quantofAverageIncoherent) + blockSize - 1) / blockSize;
+			selectMaxs << <numBlocks, blockSize >> > (numofFFTs, quantofAverageIncoherent, ddmQuant, devicearrayPos, devicearrayMaxs);
+			CudaCheckError();
+			cudaDeviceSynchronize();
+		}
+		
+
+
+
+
+		numBlocks = (numofFFTs*peakSamplesToSave*ddmQuant + blockSize - 1) / blockSize;
+		savePeak << <numBlocks, blockSize >> > (numofFFTs, deviceDataFile1, deviceDataToSave, peakSamplesToSave, quantofAverageIncoherent, fftsize, devicearrayPos,ddmQuant);
 		CudaCheckError();
 		cudaDeviceSynchronize();
-		CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataToSave, sizeof(cuComplex)*numofFFTs*peakSamplesToSave, cudaMemcpyDeviceToHost));
+		CudaSafeCall(cudaMemcpy(hostDataFile1, deviceDataToSave, sizeof(cuComplex)*numofFFTs*peakSamplesToSave*ddmQuant, cudaMemcpyDeviceToHost));
 		auto savep_elapsed = chrono::high_resolution_clock::now() - savepbeg;
-
+		
 		//STD
 		auto stdbeg = std::chrono::high_resolution_clock::now();
 		stdCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayStd, hostarrayPos, pDeviceBuffer, peakRangeStd);
@@ -261,7 +293,7 @@ int main(int argc, const char* argv[]) {
 		outputName = "results/PeaksIteration"+ to_string(i);
 		outputName = outputName + ".bin";
 		cout << outputName << "\n";
-		writedata(numofFFTs*peakSamplesToSave, hostDataFile1, outputName);
+		writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
 	
 		//ELAPSED TIME
 		auto elapsed_write = chrono::high_resolution_clock::now() - writeBeg;

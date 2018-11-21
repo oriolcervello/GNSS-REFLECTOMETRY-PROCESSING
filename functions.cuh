@@ -127,12 +127,12 @@ void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);
-__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long);
+__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long,int,int,int,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
 __global__ void scale(int, cufftComplex *, int);
 __global__ void maskAndShift(char *, cuComplex *, int);
-__global__ void savePeak(int, cufftComplex *, cufftComplex *, int, int, int, int *);
-
+__global__ void savePeak(int, cufftComplex *, cufftComplex *, int, int, int, int *,int);
+__global__ void selectMaxs(int, int, int, int *, Npp32f *);
 
 
 
