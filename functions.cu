@@ -356,9 +356,9 @@ __global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler,
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		phasemantain = float((i % (origSamples)) + samplePhaseMantain);//origninal samples signal
-		freq = (freqDoppler)+((i / (origSamples))*(ddmRes)-ddmRes * (ddmQuant / 2));
-		angle = 2.0*PI*phasemantain*(freq / (fs));
+		phasemantain = ((i % (origSamples)) );//origninal samples signal
+		freq = freqDoppler-(ddmRes * (ddmQuant/2)) +((i / (origSamples))*(ddmRes));
+		angle = 2.0*PI*(phasemantain+samplePhaseMantain)*(freq /fs);
 		aux2.x = cos(angle);
 		aux2.y = sin(angle);
 
@@ -375,22 +375,22 @@ __global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler,
 
 __global__ void selectMaxs(int numOfFFT,int quantOfIncohSumAve, int ddmQuant, int *arrayPos, Npp32f *deviceArrayMaxs) {
 
-	int step = numOfFFT / quantOfIncohSumAve,max=0;
+	int step = numOfFFT / quantOfIncohSumAve;
 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < step; i += stride) {
+		//if (i < step) {
+			for (int j = i; j < step*ddmQuant - 1; j = j + step) {
+				if (deviceArrayMaxs[j + step] > deviceArrayMaxs[i]) {
+					deviceArrayMaxs[i] = deviceArrayMaxs[j + step];
+					arrayPos[i] = arrayPos[j + step];
 
-		for (int j = i; j < step*ddmQuant; j = j + step) {
-			if (deviceArrayMaxs[j] > max) {
-				max = deviceArrayMaxs[j];
-				arrayPos[i] = arrayPos[j];
+				}
+
 
 			}
-
-
-		}
-
+		//}
 	}
 }
 
