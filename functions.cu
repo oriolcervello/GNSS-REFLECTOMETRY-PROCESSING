@@ -1,6 +1,9 @@
 ﻿#include"functions.cuh"
 #include "extra/TextParser.cuh"
 
+
+//INPUT CONFIG PARSER FUNCTIONS
+
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
 	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant) {
 
@@ -92,6 +95,8 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 
 }
 
+//READ FUNCTIONS
+
 void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 {
 	ifstream myfile;
@@ -141,6 +146,7 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead,char *data, str
 	else cout << "Unable to open file of Real Data for reading " << name << "\n";
 }
 
+//WRITE FUNCTIONS
 
 void writeIncoh(int N, cuComplex *data1, string name) {
 
@@ -161,6 +167,19 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 	}
 
 	else cout << "Unable to open file of incoh for writting " << name << "\n";
+}
+
+void openMaxsFile(string name) {
+
+	ofstream myfile;
+	myfile.open(name);
+	if (myfile.is_open())
+	{
+		
+		myfile.close();
+	}
+
+	else cout << "Unable to open file of Maxs " << name << "\n";
 }
 
 void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,int doppler,string name) {
@@ -204,8 +223,8 @@ void writedata(int N, cufftComplex *data1, string name) {
 }
 
 void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime
-	, long long *mask_elapsed_secs, long long *doppler_elapsed_secs, 
-	long long *fft_elapsed_secs, long long *mult_elapsed_secs, long long *ifft_elapsed_secs, long long *scale_elapsed_secs,
+	, long long *mask_elapsed_secs,long long *extenddop_elapsed_secs, long long *doppler_elapsed_secs,
+	long long *fft_elapsed_secs, long long *mult_elapsed_secs, long long *ifft_elapsed_secs,
 	long long *incho_elapsed_secs, long long *max_elapsed_secs, long long *savep_elapsed_secs, long long *std_elapsed_secs) {
 
 	ofstream myfile;
@@ -216,9 +235,9 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 		for (int ii = 0; ii < N; ii++)
 		{
 			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << mask_elapsed_secs[ii] << "\t\t"
-				<< doppler_elapsed_secs[ii] << "\t\t"
+				<<extenddop_elapsed_secs[ii] <<"\t\t" << doppler_elapsed_secs[ii] << "\t\t"
 				 << fft_elapsed_secs[ii] << "\t\t" << mult_elapsed_secs[ii] << "\t\t"
-				 << ifft_elapsed_secs[ii] << "\t\t" << scale_elapsed_secs[ii] << "\t\t"
+				 << ifft_elapsed_secs[ii] << "\t\t" 
 				 << incho_elapsed_secs[ii] << "\t\t" << max_elapsed_secs[ii] << "\t\t"
 				 << savep_elapsed_secs[ii] << "\t\t" << std_elapsed_secs[ii] << "\t\t"
 				<< writetime[ii] << "\t\t" << looptime[ii] << "\n";
@@ -229,6 +248,8 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 
 	else cout << "Unable to open file of times "<<name<<"\n";
 }
+
+//FFT PLANS FUNCTIONS
 
 void planfftFunction(int fftsize, int numofFFTs, int overlap, cufftHandle *plan) {
 
@@ -272,6 +293,8 @@ size_t planMemEstimate(int fftsize, int numofFFTs, int overlap) {
 	return workSize;
 }
 
+//STATISTICS FUNCTIONS
+
 void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int fftsize, Npp32f *deviceArrayMaxs,
 	 int *deviceArrayPos, Npp8u * pDeviceBuffer) {
 
@@ -280,7 +303,6 @@ void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int ff
 		nppsMaxIndx_32f(&deviceDataIncoherentSum[i*fftsize], fftsize, &deviceArrayMaxs[i], &deviceArrayPos[i], pDeviceBuffer);
 	}
 }
-
 
 void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 	Npp32f *deviceArraystd, int *arrayPos, Npp8u * pDeviceBuffer, int peakRange) {
@@ -315,6 +337,8 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 	}
 }
 
+//GLOBAL FUNCTIONS
+
 __global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, int refsize)
 {
 	cufftComplex aux;
@@ -346,7 +370,6 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 	}
 }
 
-
 __global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain,
 	int origSamples, int ddmQuant, int ddmRes, int fftsize)
 {
@@ -368,8 +391,6 @@ __global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler,
 
 		data[i].x = aux.x;
 		data[i].y = aux.y;
-
-
 	}
 }
 
@@ -387,15 +408,10 @@ __global__ void selectMaxs(int numOfFFT,int quantOfIncohSumAve, int ddmQuant, in
 					arrayPos[i] = arrayPos[j + step];
 
 				}
-
-
 			}
 		//}
 	}
 }
-
-
-
 
 __global__ void savePeak(int numOfFFT, cufftComplex *dataFromIFFT, cufftComplex *dataToSave, int peakSamplesToSave,
 	int quantOfIncohSumAve,int fftsize, int *arrayPos,int ddmQuant) {
@@ -468,34 +484,14 @@ __global__ void maskAndShift(char *devicedata, cuComplex *Dcomplexdata, int tota
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < totalBytes; i += stride) {
-		/*
-		k = (unsigned char)(devicedata[i]);
-		Dcomplexdata[i * 4 + 0].x = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 0].y = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 1].x = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 1].y = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 2].x = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 2].y = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 3].x = 2 * (k % 2) - 1;
-		k = k / 2;
-		Dcomplexdata[i * 4 + 3].y = 2 * (k % 2) - 1;
-		*/
 		k = (unsigned char)(devicedata[i]);
 		
 		aux = k & ((unsigned) 1);
 		aux = aux >> 0;
 		Dcomplexdata[i * 4 + 0].x = float(2 * (aux) - 1);
 
-
 		aux = k & ((unsigned)(1<<1));
 		aux = aux >> 1;
-
 		
 		Dcomplexdata[i * 4 + 0].y = float(2 * (aux)-1);
 		aux = k & ((unsigned)(1 << 2));
@@ -516,10 +512,6 @@ __global__ void maskAndShift(char *devicedata, cuComplex *Dcomplexdata, int tota
 		aux = k & ((unsigned)(1 << 7));
 		aux = aux >> 7;
 		Dcomplexdata[i * 4 + 3].y = float(2 * (aux)-1);
-
-
-
-
 
 	}
 }

@@ -1,0 +1,14 @@
+Pos: 26555 Value: 2.98653e+16 STD: 3.34482e+15 Doppler: 517
+Pos: 26555 Value: 2.99396e+16 STD: 3.65241e+15 Doppler: 517
+Pos: 26555 Value: 2.99377e+16 STD: 3.92231e+15 Doppler: 517
+Pos: 26554 Value: 2.98984e+16 STD: 4.14703e+15 Doppler: 517
+Pos: 26554 Value: 2.97995e+16 STD: 4.32034e+15 Doppler: 517
+Pos: 26554 Value: 2.96307e+16 STD: 4.43746e+15 Doppler: 517
+Pos: 26554 Value: 2.93929e+16 STD: 4.49517e+15 Doppler: 517
+Pos: 26554 Value: 2.90874e+16 STD: 4.49187e+15 Doppler: 517
+Pos: 26554 Value: 2.87153e+16 STD: 4.42763e+15 Doppler: 517
+Pos: 26554 Value: 2.82781e+16 STD: 4.30413e+15 Doppler: 517
+Pos: 26554 Value: 2.77775e+16 STD: 4.12465e+15 Doppler: 517
+
+ --------------------------------------------------------------------- 
+

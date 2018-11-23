@@ -119,6 +119,7 @@ void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
 void writeMaxs(int, Npp32f *, int *,Npp32f *,int, string);
+void openMaxsFile(string);
 void writeIncoh(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *, long long *, long long *, long long *);
