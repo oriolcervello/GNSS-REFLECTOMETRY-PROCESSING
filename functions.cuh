@@ -118,13 +118,12 @@ size_t planMemEstimate(int, int, int);
 void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
-void writeMaxs(int, Npp32f *, int *,Npp32f *,int, string);
-void openMaxsFile(string);
+void writeMaxs(int, Npp32f *, int *,Npp32f *, Npp32f *,int, string,int,int,int,int);
 void writeIncoh(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *, long long *, long long *, long long *);
 void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
-void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int);
+void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int,int,Npp32f *);
 
 __global__ void multip(int , cufftComplex *, cufftComplex *,int);
 __global__ void extendRefSignal(int, cufftComplex *, int);

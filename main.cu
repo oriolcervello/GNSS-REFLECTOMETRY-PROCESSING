@@ -47,7 +47,8 @@ int main(int argc, const char* argv[]) {
 	}
 
 	string outputName;
-	int numBlocks, nBufferSize,i,k,samplesDoppler= samplesOfSignal;
+	int numBlocks, nMaxBufferSize,nStdBufferSize,i,k,samplesDoppler= samplesOfSignal;
+	int stdLength = (fftsize / 2) - ((peakSamplesToSave) / 2) - 1;
 	unsigned long long samplePhaseMantain;
 	//int checkMax
 	if (ddmQuant > 1) {
@@ -58,16 +59,14 @@ int main(int argc, const char* argv[]) {
 	char *hostBytesOfData, *deviceBytesOfData;
 	int *devicearrayPos,*hostarrayPos;
 	cufftComplex *deviceDataFile1, *deviceDataFile2, *hostDataFile1, *hostDataFile2, *deviceDataToSave;
-	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd, *hostarrayMaxs, *hostarrayStd;
-	Npp8u * pDeviceBuffer;
+	Npp32f *deviceIncoherentSum, *devicearrayMaxs, *devicearrayStd,*devicearrayMean,*hostarrayMean, *hostarrayMaxs, *hostarrayStd;
+	Npp8u *pStdDeviceBuffer,*pMaxDeviceBuffer;
 
 	cufftHandle plan, planref;
 	
 	long long *read_elapsed_secs,*write_elapsed_secs, *elapsed_secs, *mask_elapsed_secs, *doppler_elapsed_secs, 
 		 *fft_elapsed_secs, *mult_elapsed_secs,*ifft_elapsed_secs, *extenddop_elapsed_secs, *incho_elapsed_secs
 		, *max_elapsed_secs, *savep_elapsed_secs, *std_elapsed_secs;
-	
-	openMaxsFile("results/Maximums.txt");
 
 	//ALLOCATE
 	read_elapsed_secs = new long long[numofDataLines];
@@ -88,6 +87,7 @@ int main(int argc, const char* argv[]) {
 	hostarrayPos = new int[inchoerentNumofFFT];
 	hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
 	hostarrayStd = new Npp32f[inchoerentNumofFFT];
+	hostarrayMean = new Npp32f[inchoerentNumofFFT];
 	hostDataFile1 = (cufftComplex *)malloc(sizeof(cufftComplex) * samplesWithOverlap);
 	hostDataFile2 = (cufftComplex *)malloc(sizeof(cufftComplex) * fftsize);
 	CudaSafeCall(cudaMalloc(&deviceBytesOfData, sizeof(char)*bytesToRead));
@@ -98,8 +98,11 @@ int main(int argc, const char* argv[]) {
 	CudaSafeCall(cudaMalloc(&devicearrayPos, sizeof(int)*inchoerentNumofFFT));
 	CudaSafeCall(cudaMalloc(&devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT));
 	CudaSafeCall(cudaMalloc(&devicearrayStd, sizeof(Npp32f)*inchoerentNumofFFT));
-	nppsSumGetBufferSize_32f(fftsize, &nBufferSize);
-	CudaSafeCall(cudaMalloc((void **)(&pDeviceBuffer), nBufferSize));
+	CudaSafeCall(cudaMalloc(&devicearrayMean, sizeof(Npp32f)*inchoerentNumofFFT));
+	nppsMeanStdDevGetBufferSize_32f(stdLength, &nStdBufferSize);
+	CudaSafeCall(cudaMalloc((void **)(&pStdDeviceBuffer), nStdBufferSize));
+	nppsMaxGetBufferSize_32f(fftsize, &nMaxBufferSize);
+	CudaSafeCall(cudaMalloc((void **)(&pMaxDeviceBuffer), nMaxBufferSize));
 	cudaDeviceSynchronize();
 	
 	//MMEMORY INFO
@@ -108,9 +111,9 @@ int main(int argc, const char* argv[]) {
 	cout<< "\n-MEMORY: \n";
 	cout<< "Total GPU mem: "<< totalMem <<" bytes\n";
 	size_t planBuffer = planMemEstimate(fftsize, numofFFTs, overlap);
-	long long allocatedMem = sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap +
-		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*fftsize + sizeof(Npp32f)*inchoerentNumofFFT*fftsize
-		+ sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + nBufferSize;
+	long long allocatedMem = sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap + nMaxBufferSize +
+		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*fftsize + sizeof(Npp32f)*inchoerentNumofFFT*fftsize+
+		sizeof(Npp32f)*inchoerentNumofFFT*fftsize + sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + nStdBufferSize;
 	cout << "GPU mem allocated: " << allocatedMem <<" bytes\n";
 	cout << "GPU total aprox mem used: " << allocatedMem+ planBuffer <<" bytes\n\n";
 	
@@ -249,7 +252,7 @@ int main(int argc, const char* argv[]) {
 		
 		//MAXIMUM
 		auto maxbeg = std::chrono::high_resolution_clock::now();
-		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pDeviceBuffer);
+		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pMaxDeviceBuffer);
 		cudaDeviceSynchronize();
 		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
@@ -277,15 +280,18 @@ int main(int argc, const char* argv[]) {
 		
 		//STD
 		auto stdbeg = std::chrono::high_resolution_clock::now();
-		stdCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayStd, hostarrayPos, pDeviceBuffer, peakRangeStd);
+		stdCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayStd, hostarrayPos, pStdDeviceBuffer, peakRangeStd,stdLength, devicearrayMean);
 		cudaDeviceSynchronize();
 		CudaSafeCall(cudaMemcpy(hostarrayStd, devicearrayStd, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
+		CudaSafeCall(cudaMemcpy(hostarrayMean, devicearrayMean, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		cudaDeviceSynchronize();
 		auto std_elapsed = chrono::high_resolution_clock::now() - stdbeg;
 
 		//OUTPUT
 		auto writeBeg = chrono::high_resolution_clock::now();
-		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, doppler[i],"results/Maximums.txt");
+		outputName = "results/Maximums" + to_string(i);
+		outputName = outputName + ".bin";
+		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
 		outputName = "results/PeaksIteration"+ to_string(i);
 		outputName = outputName + ".bin";
 		cout << outputName << "\n";
@@ -314,7 +320,7 @@ int main(int argc, const char* argv[]) {
 		mask_elapsed_secs, extenddop_elapsed_secs, doppler_elapsed_secs,
 		fft_elapsed_secs, mult_elapsed_secs, ifft_elapsed_secs, incho_elapsed_secs
 		, max_elapsed_secs, savep_elapsed_secs, std_elapsed_secs);
-
+	
 	//FREE MEMORY
 	//cufftSafeCall(cufftDestroy(plan));
 	//cufftSafeCall(cufftDestroy(inverseplan));
@@ -324,14 +330,17 @@ int main(int argc, const char* argv[]) {
 	cudaFree(devicearrayPos);
 	cudaFree(deviceBytesOfData);
 	cudaFree(devicearrayMaxs);
+	cudaFree(devicearrayMean);
 	cudaFree(deviceDataToSave);
-	cudaFree(pDeviceBuffer);
+	cudaFree(pStdDeviceBuffer);
+	cudaFree(pMaxDeviceBuffer);
 	cudaFree(devicearrayStd);
 	cudaDeviceReset();
 	delete[] fileDataNames;
 	delete[] hostBytesOfData;
 	delete[] hostarrayPos;
 	delete[] hostarrayMaxs;
+	delete[] hostarrayMean;
 	delete[] hostarrayStd;
 	delete[] hostDataFile2;
 	delete[] hostDataFile1;

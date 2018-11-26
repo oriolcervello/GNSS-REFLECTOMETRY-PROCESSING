@@ -169,31 +169,30 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 	else cout << "Unable to open file of incoh for writting " << name << "\n";
 }
 
-void openMaxsFile(string name) {
-
+void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd, Npp32f *hostarrayMean,int doppler,string name,int iteration,int ddmRes,
+	int ddmQuant, int origIncohNum) {
+	float freq, aux;
 	ofstream myfile;
-	myfile.open(name);
+	myfile.open(name, ios::binary);//
 	if (myfile.is_open())
 	{
 		
-		myfile.close();
-	}
-
-	else cout << "Unable to open file of Maxs " << name << "\n";
-}
-
-void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd,int doppler,string name) {
-
-	ofstream myfile;
-	myfile.open(name, ios::app);
-	if (myfile.is_open())
-	{
 		for (int ii = 0; ii < N; ii++)
 		{
-			myfile <<"Pos: "<< dataMaxPos[ii]<<" Value: " << dataMaxValue[ii] << " STD: " << hostarrayStd[ii]<< " Doppler: " << doppler<< "\n";
+			aux = float(dataMaxPos[ii]);
+			freq = doppler - (ddmRes * (ddmQuant / 2)) + ((ii / (origIncohNum))*(ddmRes));
+			myfile.write((char*)&aux, sizeof(float));
+			myfile.write((char*)&dataMaxValue[ii], sizeof(float));
+			myfile.write((char*)&hostarrayMean[ii], sizeof(float));
+			myfile.write((char*)&hostarrayStd[ii], sizeof(float));
+			myfile.write((char*)&freq, sizeof(float));
+
+
+
+			//myfile <<float( dataMaxPos[ii])<< " "<<dataMaxValue[ii] << " " << hostarrayMean[ii] << " " << hostarrayStd[ii] << " " << freq << " ";
 
 		}
-		myfile << "\n --------------------------------------------------------------------- \n\n";
+		
 		myfile.close();
 	}
 
@@ -231,7 +230,7 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 	myfile.open(name);
 	if (myfile.is_open())
 	{
-		myfile << "Atempt\t\tReadT.\t\tMask\t\tDoppler\t\tFFT\t\tMul\t\tIFFT\t\tScale\t\tIncoh\t\tMax\t\tSaveP.\t\tSTD\t\tWriteT.\t\tLoopT." << "\n";
+		myfile << "Atempt\t\tReadT.\t\tMask\t\tExtend\t\tDoppler\t\tFFT\t\tMul\t\tIFFT\t\tIncoh\t\tMax\t\tSaveP.\t\tSTD\t\tWriteT.\t\tLoopT." << "\n";
 		for (int ii = 0; ii < N; ii++)
 		{
 			myfile << ii << "\t\t" << readtime[ii] << "\t\t" << mask_elapsed_secs[ii] << "\t\t"
@@ -305,10 +304,10 @@ void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int ff
 }
 
 void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
-	Npp32f *deviceArraystd, int *arrayPos, Npp8u * pDeviceBuffer, int peakRange) {
+	Npp32f *deviceArraystd, int *arrayPos, Npp8u * pStdDeviceBuffer, int peakRange,int stdLength, Npp32f *devicearrayMean) {
 
-	int leftPeakIndex, rightPeakIndex, stdLength;
-	stdLength = (fftsize / 2) - ((peakRange) / 2)-1;
+	int leftPeakIndex, rightPeakIndex;
+	//stdLength = (fftsize / 2) - ((peakRange) / 2)-1;
 	for (int i = 0; i < numofIncoherentSums; i++) {
 		
 		leftPeakIndex = arrayPos[i] - peakRange/2;
@@ -317,21 +316,21 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 		if (rightPeakIndex >= fftsize) {//case 2
 			rightPeakIndex = rightPeakIndex % fftsize;
 			//stdLength = leftPeakIndex - rightPeakIndex;
-			nppsStdDev_32f(&dataIncoherentSum[i*fftsize+ rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+			nppsMeanStdDev_32f(&dataIncoherentSum[i*fftsize+ rightPeakIndex], stdLength,&devicearrayMean[i],&deviceArraystd[i], pStdDeviceBuffer);
 		}
 		else if (leftPeakIndex < 0) {//case 3
 			leftPeakIndex = fftsize + leftPeakIndex;
 			//stdLength = leftPeakIndex-rightPeakIndex ;
-			nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+			nppsMeanStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &devicearrayMean[i], &deviceArraystd[i], pStdDeviceBuffer);
 		}
 		else {//case 1
 			if (arrayPos[i] < fftsize / 2) {
 				//stdLength = fftsize- rightPeakIndex;
-				nppsStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &deviceArraystd[i], pDeviceBuffer);
+				nppsMeanStdDev_32f(&dataIncoherentSum[i*fftsize + rightPeakIndex], stdLength, &devicearrayMean[i], &deviceArraystd[i], pStdDeviceBuffer);
 			}
 			else {
 				//stdLength = leftPeakIndex;
-				nppsStdDev_32f(&dataIncoherentSum[i*fftsize], stdLength, &deviceArraystd[i], pDeviceBuffer);
+				nppsMeanStdDev_32f(&dataIncoherentSum[i*fftsize], stdLength, &devicearrayMean[i], &deviceArraystd[i], pStdDeviceBuffer);
 			}			
 		}		
 	}
