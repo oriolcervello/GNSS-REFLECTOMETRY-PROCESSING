@@ -122,11 +122,11 @@ int main(int argc, const char* argv[]) {
 
 	CudaSafeCall(cudaMemcpy(deviceDataFile2, hostDataFile2, sizeof(cufftComplex)*(fftsize - overlap), cudaMemcpyHostToDevice));
 	cudaDeviceSynchronize();
-	
-	numBlocks = (fftsize + blockSize - 1) / blockSize;
-	extendRefSignal << <numBlocks, blockSize >> > (fftsize, deviceDataFile2, fftsize - overlap);
-	CudaCheckError();
-
+	if (overlap > 0) {
+		numBlocks = (fftsize + blockSize - 1) / blockSize;
+		extendRefSignal << <numBlocks, blockSize >> > (fftsize, deviceDataFile2, fftsize - overlap);
+		CudaCheckError();
+	}
 	planfftFunction(fftsize, 1, 0, &planref);
 	cudaDeviceSynchronize();
 	cufftSafeCall(cufftExecC2C(planref, deviceDataFile2, deviceDataFile2, CUFFT_FORWARD));
@@ -138,10 +138,10 @@ int main(int argc, const char* argv[]) {
 		
 		auto begin = std::chrono::high_resolution_clock::now();
 		//READ DATA
-		/*readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);*/
+		//readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);
 		readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i],bytesToRead, hostBytesOfData, fileDataNames[i]);
 		
-		/*CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));*/
+		//CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
 		CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
 		cudaDeviceSynchronize();
 		auto elapsed_read = chrono::high_resolution_clock::now() - begin;
@@ -171,11 +171,13 @@ int main(int argc, const char* argv[]) {
 
 		//MULTIPLY BY DOPPLER
 		auto dopplerbeg = std::chrono::high_resolution_clock::now();
-		samplePhaseMantain = (i * fftsize*numofFFTs);
-		numBlocks = (samplesDoppler + blockSize - 1) / blockSize;
-		applyDoppler << <numBlocks, blockSize >> > (samplesDoppler, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain, fftsize * numofFFTs,ddmQuant,ddmRes,fftsize);
-		CudaCheckError();
-		cudaDeviceSynchronize();
+		if (doppler[i] != 0) {
+			samplePhaseMantain = (i * fftsize*numofFFTs);
+			numBlocks = (samplesDoppler + blockSize - 1) / blockSize;
+			applyDoppler << <numBlocks, blockSize >> > (samplesDoppler, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain, fftsize * numofFFTs, ddmQuant, ddmRes, fftsize);
+			CudaCheckError();
+			cudaDeviceSynchronize();
+		}
 		auto doppler_elapsed = chrono::high_resolution_clock::now() - dopplerbeg;
 		
 		//CHECK: doppler (only for printing doppler)
