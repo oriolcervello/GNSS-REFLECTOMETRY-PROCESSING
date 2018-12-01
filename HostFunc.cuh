@@ -13,8 +13,11 @@
 using namespace std;
 #endif
 
-#ifndef FUNC
-#define FUNC
+#include "GlobalFunc.cuh"
+
+
+#ifndef FUNCERR
+#define FUNCERR
 
 
 
@@ -107,6 +110,15 @@ inline void __cudaCheckError(const char *file, const int line)
 	return;
 }
 //END ERROR CHECK
+#endif
+
+
+
+
+
+#ifndef HOSTFUNC
+#define HOSTFUNC
+
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
 	,  int *, int *, int *, string *, string *,int *, int *,bool *);
@@ -127,16 +139,6 @@ void writetime(int, string, long long *, long long *, long long *, long long *, 
 	long long *, long long *, long long *, long long *, long long *, long long *, long long *);
 void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
 void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int,int,Npp32f *);
-
-__global__ void multip(int , cufftComplex *, cufftComplex *,int,bool);
-__global__ void extendRefSignal(int, cufftComplex *, int);
-__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long,int,int,int,int);
-__global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );
-__global__ void scale(int, cufftComplex *, int);
-__global__ void maskAndShift(char *, cuComplex *, int);
-__global__ void savePeak(int, cufftComplex *, cufftComplex *, int, int, int, int *,int);
-__global__ void selectMaxs(int, int, int, int *, Npp32f *);
-
 
 
 #endif

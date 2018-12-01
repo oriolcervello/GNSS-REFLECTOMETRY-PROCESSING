@@ -13,7 +13,8 @@
 using namespace std;
 #endif
 
-#include"functions.cuh"
+#include"HostFunc.cuh"
+#include "GlobalFunc.cuh"
 
 int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
