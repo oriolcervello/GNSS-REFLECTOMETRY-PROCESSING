@@ -109,12 +109,15 @@ inline void __cudaCheckError(const char *file, const int line)
 //END ERROR CHECK
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
-	,  int *, int *, int *, string *, string *,int *, int *);
+	,  int *, int *, int *, string *, string *,int *, int *,bool *);
 void checkInputConfig(int , const char **, int , int , int , int , int , int, int, int, int
-	,  int *, int *, int *, string *, string , int , int );
+	,  int *, int *, int *, string *, string *, int , int,bool );
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
 size_t planMemEstimate(int, int, int);
+void readReference(int, int, int, cufftComplex *, cufftComplex *, string);
+void prepareData(int, int *, int *, int bytesToead, char *, string *, char *, int, int, int, int, cufftComplex *
+	, int, int, cufftComplex *, chrono::nanoseconds *, chrono::nanoseconds *, chrono::nanoseconds *);
 void readdata(int,int , cufftComplex *, string);
 void readRealData(int, int,int, char *, string);
 void writedata(int, cufftComplex *, string);
@@ -125,7 +128,7 @@ void writetime(int, string, long long *, long long *, long long *, long long *, 
 void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
 void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int,int,Npp32f *);
 
-__global__ void multip(int , cufftComplex *, cufftComplex *,int);
+__global__ void multip(int , cufftComplex *, cufftComplex *,int,bool);
 __global__ void extendRefSignal(int, cufftComplex *, int);
 __global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long,int,int,int,int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int );

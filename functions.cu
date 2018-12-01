@@ -5,7 +5,7 @@
 //INPUT CONFIG PARSER FUNCTIONS
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
-	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant) {
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer) {
 
 	TextParser t(configFileName);
 
@@ -21,12 +21,16 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*fSampling = t.getint();
 	TextParserSafeCall(t.seek("*BLOCKSIZE"));
 	*blockSize = t.getint();
+	TextParserSafeCall(t.seek("*INTERFEROMETIC"));
+	*interfer = t.getint();
 	TextParserSafeCall(t.seek("*PEAKRANGESTD"));
 	*peakRangeStd = t.getint();
 	TextParserSafeCall(t.seek("*PEAKSAMPLESTOSAVE"));
 	*peakSamplesToSave = t.getint();
-	TextParserSafeCall(t.seek("*REFFILENAME"));
-	*fileRefNames = t.getword();
+	if (*interfer == false) {
+		TextParserSafeCall(t.seek("*REFFILENAME"));
+		fileRefNames[0] = t.getword(); 
+	}
 	TextParserSafeCall(t.seek("*DDMFREQRES"));
 	*ddmRes = t.getint();
 	TextParserSafeCall(t.seek("*DDMNUMQUANT"));
@@ -52,12 +56,14 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		dataOffsetBeg[i] = t.getint();
 		dataOffsetEnd[i] = t.getint();
 		doppler[i] = t.getint();
-		
+		if (*interfer == true) {
+			fileRefNames[i] = t.getword();
+		}
 	}
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
-	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string fileRefNames, int ddmRes, int ddmQuant) {
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -76,9 +82,12 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "FSampling: " << fSampling << "\n";
 	cout << "Quant of averg Inch.: " << quantOfAverIncoh << "\n";
 	cout << "Blok Size: " << blockSize << "\n";
+	cout << "Interferometric: " << interfer << "\n";
 	cout << "Peak samples for the std: " << peakRangeStd << "\n";
 	cout << "Peak samples to save: " << peakSamplesToSave << "\n";
-	cout << "Ref File Name: " << fileRefNames << "\n";
+	if (interfer == false) {
+		cout << "Ref File Name: " << fileRefNames[0] << "\n";
+	}
 	cout << "DDM Res: " << ddmRes << "\n";
 	cout << "DDM Quant: " << ddmQuant << "\n";
 
@@ -89,13 +98,78 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
 		cout << dataOffsetEnd[i] << "  ";
-		cout << doppler[i] << "\n";
-
+		cout << doppler[i] ;
+		if (interfer == true) {
+			cout << fileRefNames[0] << "\n";
+		}
+		else {
+			cout << "\n";
+		}
 	}
 
 }
 
 //READ FUNCTIONS
+
+void readReference(int fftsize, int overlap,int blockSize ,cufftComplex *hostDataFile2, cufftComplex *deviceDataFile2,string fileRefName) {
+	
+	readdata(fftsize - overlap, 0, hostDataFile2, fileRefName);
+	cufftHandle planref;
+	CudaSafeCall(cudaMemcpy(deviceDataFile2, hostDataFile2, sizeof(cufftComplex)*(fftsize - overlap), cudaMemcpyHostToDevice));
+	cudaDeviceSynchronize();
+	if (overlap > 0) {
+		int numBlocks = (fftsize + blockSize - 1) / blockSize;
+		extendRefSignal << <numBlocks, blockSize >> > (fftsize, deviceDataFile2, fftsize - overlap);
+		CudaCheckError();
+	}
+	planfftFunction(fftsize, 1, 0, &planref);
+	cudaDeviceSynchronize();
+	cufftSafeCall(cufftExecC2C(planref, deviceDataFile2, deviceDataFile2, CUFFT_FORWARD));
+	cudaDeviceSynchronize();
+	cufftSafeCall(cufftDestroy(planref));
+
+}
+
+
+void prepareData(int i, int *dataOffsetEnd,int *dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string *fileDataNames,
+	char *deviceBytesOfData, int blockSize, int ddmQuant, int samplesOfSignal, int samplesWithOverlap, cufftComplex *deviceDataFile1
+     ,int numofFFTs, int fftsize, cufftComplex *hostDataFile1, chrono::nanoseconds *elapsed_read, chrono::nanoseconds *mask_elapsed
+	,chrono::nanoseconds *extenddop_elapsed) {
+	
+	auto begin = std::chrono::high_resolution_clock::now();
+	//READ DATA
+	//readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);
+	readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i]);
+
+	//CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
+	cudaDeviceSynchronize();
+	*elapsed_read = chrono::high_resolution_clock::now() - (begin);
+
+	//MASK AND SHIFT
+	auto maskbeg = std::chrono::high_resolution_clock::now();
+	int numBlocks = (bytesToRead + blockSize - 1) / blockSize;
+	maskAndShift << <numBlocks, blockSize >> > (deviceBytesOfData, deviceDataFile1, bytesToRead);
+	CudaCheckError();
+	cudaDeviceSynchronize();
+	*mask_elapsed = chrono::high_resolution_clock::now() - maskbeg;
+
+	//EXTEND FOR DOPPLER
+	auto extenddopbeg = std::chrono::high_resolution_clock::now();
+	if (ddmQuant > 1) {
+		numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
+		extendRefSignal << <numBlocks, blockSize >> > (samplesWithOverlap, deviceDataFile1, numofFFTs * fftsize);
+		CudaCheckError();
+		cudaDeviceSynchronize();
+	}
+	*extenddop_elapsed = chrono::high_resolution_clock::now() - extenddopbeg;
+
+
+}
+
+
+
+
 
 void readdata(int length,int offsetFromBeg, cufftComplex *data, string name)
 {
@@ -338,13 +412,20 @@ void stdCompute(int numofIncoherentSums, Npp32f *dataIncoherentSum, int fftsize,
 
 //GLOBAL FUNCTIONS
 
-__global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, int refsize)
+__global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, int refsize,bool interferometric)
 {
 	cufftComplex aux;
+	int k;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		int k = i % refsize;
+		if (interferometric == true) {
+			k = i;
+		}
+		else {
+			k = i % refsize;
+		}
+		k = i % refsize;
 		
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 
