@@ -5,7 +5,8 @@
 //INPUT CONFIG PARSER FUNCTIONS
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
-	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer) {
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer
+,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs) {
 
 	TextParser t(configFileName);
 
@@ -23,6 +24,8 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	*blockSize = t.getint();
 	TextParserSafeCall(t.seek("*INTERFEROMETIC"));
 	*interfer = t.getint();
+	TextParserSafeCall(t.seek("*SAMPLESAVOIDMAX"));
+	*samplesAvoidMaxs = t.getint();
 	TextParserSafeCall(t.seek("*PEAKRANGESTD"));
 	*peakRangeStd = t.getint();
 	TextParserSafeCall(t.seek("*PEAKSAMPLESTOSAVE"));
@@ -58,12 +61,14 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		doppler[i] = t.getint();
 		if (*interfer == true) {
 			fileRefNames[i] = t.getword();
+			dataOffsetBegInterferometric[i]= t.getint();
 		}
 	}
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
-	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer) {
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer
+, int *dataOffsetBegInterferometric, int samplesAvoidMaxs) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -83,6 +88,7 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Quant of averg Inch.: " << quantOfAverIncoh << "\n";
 	cout << "Blok Size: " << blockSize << "\n";
 	cout << "Interferometric: " << interfer << "\n";
+	cout << "Samples avoid MAxs: " << samplesAvoidMaxs << "\n";
 	cout << "Peak samples for the std: " << peakRangeStd << "\n";
 	cout << "Peak samples to save: " << peakSamplesToSave << "\n";
 	if (interfer == false) {
@@ -98,9 +104,10 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
 		cout << dataOffsetEnd[i] << "  ";
-		cout << doppler[i] ;
+		cout << doppler[i] << "  ";
 		if (interfer == true) {
-			cout << fileRefNames[0] << "\n";
+			cout << fileRefNames[0] << "  ";
+			cout << dataOffsetBegInterferometric << "\n";
 		}
 		else {
 			cout << "\n";
@@ -131,7 +138,7 @@ void prepareReference(int fftsize, int overlap,int blockSize ,cufftComplex *host
 }
 
 
-void prepareData(int i, int *dataOffsetEnd,int *dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string *fileDataNames,
+void prepareData( int dataOffsetEnd,int dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string fileDataNames,
 	char *deviceBytesOfData, int blockSize, int ddmQuant, int samplesOfSignal, int samplesWithOverlap, cufftComplex *deviceDataFile1
      ,int numofFFTs, int fftsize, cufftComplex *hostDataFile1, chrono::nanoseconds *elapsed_read, chrono::nanoseconds *mask_elapsed
 	,chrono::nanoseconds *extenddop_elapsed) {
@@ -139,7 +146,7 @@ void prepareData(int i, int *dataOffsetEnd,int *dataOffsetBeg, int bytesToRead, 
 	auto begin = std::chrono::high_resolution_clock::now();
 	//READ DATA
 	//readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);
-	readRealData(dataOffsetEnd[i] - dataOffsetBeg[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i]);
+	readRealData(dataOffsetEnd - dataOffsetBeg, dataOffsetBeg, bytesToRead, hostBytesOfData, fileDataNames);
 
 	//CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
@@ -214,11 +221,11 @@ size_t planMemEstimate(int fftsize, int numofFFTs, int overlap) {
 //STATISTICS FUNCTIONS
 
 void maxCompute(int numofIncoherentSums, Npp32f *deviceDataIncoherentSum, int fftsize, Npp32f *deviceArrayMaxs,
-	 int *deviceArrayPos, Npp8u * pDeviceBuffer) {
+	 int *deviceArrayPos, Npp8u * pDeviceBuffer, int samplesAvoidMax) {
 
 	for (int i = 0; i < numofIncoherentSums; i++) {
 
-		nppsMaxIndx_32f(&deviceDataIncoherentSum[i*fftsize], fftsize, &deviceArrayMaxs[i], &deviceArrayPos[i], pDeviceBuffer);
+		nppsMaxIndx_32f(&deviceDataIncoherentSum[i*fftsize+(samplesAvoidMax)], fftsize+ samplesAvoidMax, &deviceArrayMaxs[i], &deviceArrayPos[i], pDeviceBuffer);
 	}
 }
 

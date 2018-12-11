@@ -121,16 +121,16 @@ inline void __cudaCheckError(const char *file, const int line)
 
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
-	,  int *, int *, int *, string *, string *,int *, int *,bool *);
+	,  int *, int *, int *, string *, string *,int *, int *,bool *, int *,int *);
 void checkInputConfig(int , const char **, int , int , int , int , int , int, int, int, int
-	,  int *, int *, int *, string *, string *, int , int,bool );
+	,  int *, int *, int *, string *, string *, int , int,bool, int*, int);
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
 size_t planMemEstimate(int, int, int);
 void prepareReference(int, int, int, cufftComplex *, cufftComplex *, string);
-void prepareData(int, int *, int *, int bytesToead, char *, string *, char *, int, int, int, int, cufftComplex *
+void prepareData( int , int , int bytesToead, char *, string , char *, int, int, int, int, cufftComplex *
 	, int, int, cufftComplex *, chrono::nanoseconds *, chrono::nanoseconds *, chrono::nanoseconds *);
-void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *);
+void maxCompute(int, Npp32f *, int,  Npp32f *, int *, Npp8u *,int);
 void stdCompute(int, Npp32f *, int, Npp32f *, int *, Npp8u *, int,int,Npp32f *);
 
 

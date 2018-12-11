@@ -15,7 +15,7 @@ __global__ void multip(int samples, cufftComplex *data1, cufftComplex *data2, in
 		else {
 			k = i % refsize;
 		}
-		k = i % refsize;
+		
 
 		//(a+bi)*(c+di)=(ac−bd)+(ad+bc)i
 

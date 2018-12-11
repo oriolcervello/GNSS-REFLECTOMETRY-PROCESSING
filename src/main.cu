@@ -21,21 +21,23 @@ int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 
 	//READ CONFIG FILE
-	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave, ddmRes, ddmQuant;
+	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave,
+		samplesAvoidMax,ddmRes, ddmQuant;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	bool interferometic;
 	string *fileDataNames, *fileRefName;
-	int *dataOffsetBeg, *dataOffsetEnd;
+	int *dataOffsetBeg, *dataOffsetEnd,*dataOffsetBegInterferometric;
 	int *doppler;
 
 	fileRefName = new string[numofDataLines];
 	fileDataNames = new string[numofDataLines];
 	dataOffsetBeg = new int[numofDataLines];
+	dataOffsetBegInterferometric = new int[numofDataLines];
 	dataOffsetEnd = new int[numofDataLines];
 	doppler = new int[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic);
-	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax);
 
 	//OTHER DECLARATIONS
 	int  originalSamplesOfSignal = (numofFFTs * (fftsize - overlap)) + overlap;//samples of complex data
@@ -75,7 +77,7 @@ int main(int argc, const char* argv[]) {
 
 	int device2quant;
 	if (interferometic == true) {
-		device2quant = peakSamplesToSave*numofFFTs*ddmQuant;
+		device2quant = samplesWithOverlap;
 	}
 	else
 	{
@@ -136,6 +138,7 @@ int main(int argc, const char* argv[]) {
 	if (interferometic == false) {
 		prepareReference(fftsize, overlap, blockSize, hostDataFile2, deviceDataFile2, fileRefName[0]);
 		delete[] fileRefName;
+		delete[] dataOffsetBegInterferometric;
 	}
 
 	//LOOP
@@ -143,16 +146,16 @@ int main(int argc, const char* argv[]) {
 		
 		auto begin = std::chrono::high_resolution_clock::now();
 		//READ, MASK, AND EXTEND
-		prepareData(i, dataOffsetEnd, dataOffsetBeg, bytesToRead, hostBytesOfData, fileDataNames,
+		prepareData(dataOffsetEnd[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i],
 			deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal, samplesWithOverlap, deviceDataFile1
 			, numofFFTs, fftsize, hostDataFile1,&elapsed_read, &mask_elapsed
 			, &extenddop_elapsed);
-		
+
 		if (interferometic == true) {
 			chrono::nanoseconds elapsed_read_inter, mask_elapsed_inter, extenddop_elapsed_inter;
-			prepareData(i, dataOffsetEnd, dataOffsetBeg, bytesToRead, hostBytesOfData, fileRefName,
-				deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal, samplesWithOverlap, deviceDataFile2
-				, numofFFTs, fftsize, hostDataFile2,&elapsed_read_inter, &mask_elapsed_inter
+			prepareData( dataOffsetEnd[i]+(dataOffsetBegInterferometric[i]-dataOffsetBeg[i]), dataOffsetBegInterferometric[i],
+				bytesToRead, hostBytesOfData, fileRefName[i],deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal,
+				samplesWithOverlap, deviceDataFile2, numofFFTs, fftsize, hostDataFile2,&elapsed_read_inter, &mask_elapsed_inter
 				, &extenddop_elapsed_inter);
 			elapsed_read += elapsed_read_inter;
 			mask_elapsed += mask_elapsed_inter;
@@ -253,7 +256,7 @@ int main(int argc, const char* argv[]) {
 		
 		//MAXIMUM
 		auto maxbeg = std::chrono::high_resolution_clock::now();
-		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pMaxDeviceBuffer);
+		maxCompute(inchoerentNumofFFT, deviceIncoherentSum, fftsize, devicearrayMaxs, devicearrayPos, pMaxDeviceBuffer,samplesAvoidMax);
 		cudaDeviceSynchronize();
 		CudaSafeCall(cudaMemcpy(hostarrayPos, devicearrayPos, sizeof(int)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
 		CudaSafeCall(cudaMemcpy(hostarrayMaxs, devicearrayMaxs, sizeof(Npp32f)*inchoerentNumofFFT, cudaMemcpyDeviceToHost));
@@ -340,6 +343,7 @@ int main(int argc, const char* argv[]) {
 	delete[] fileDataNames;
 	if (interferometic == true) {
 		delete[] fileRefName;
+		delete[] dataOffsetBegInterferometric;
 	}
 	delete[] hostBytesOfData;
 	delete[] hostarrayPos;
