@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]) {
 		samplesAvoidMax,ddmRes, ddmQuant;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	bool interferometic;
-	string *fileDataNames, *fileRefName;
+	string *fileDataNames, *fileRefName, resultDirectory;
 	int *dataOffsetBeg, *dataOffsetEnd,*dataOffsetBegInterferometric;
 	int *doppler;
 
@@ -36,8 +36,8 @@ int main(int argc, const char* argv[]) {
 	dataOffsetEnd = new int[numofDataLines];
 	doppler = new int[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax);
-	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax, &resultDirectory);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax, resultDirectory);
 
 	//OTHER DECLARATIONS
 	int  originalSamplesOfSignal = (numofFFTs * (fftsize - overlap)) + overlap;//samples of complex data
@@ -293,11 +293,10 @@ int main(int argc, const char* argv[]) {
 
 		//OUTPUT
 		auto writeBeg = chrono::high_resolution_clock::now();
-		outputName = "results/Maximums" + to_string(i);
-		outputName = outputName + ".bin";
+		outputName = resultDirectory+"Maximums" + to_string(i) + ".bin";
 		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
-		outputName = "results/PeaksIteration"+ to_string(i);
-		outputName = outputName + ".bin";
+		
+		outputName = resultDirectory + "PeaksIteration" + to_string(i) + ".bin";
 		cout << outputName << "\n";
 		writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
 	
@@ -319,8 +318,8 @@ int main(int argc, const char* argv[]) {
 		savep_elapsed_secs[i] = chrono::duration_cast<chrono::microseconds>(savep_elapsed).count();
 		std_elapsed_secs[i] = chrono::duration_cast<chrono::microseconds>(std_elapsed).count();
 	}
-
-	writetime(numofDataLines, "results/Times.txt", read_elapsed_secs, write_elapsed_secs, elapsed_secs,
+	outputName = resultDirectory + "Times.txt";
+	writetime(numofDataLines, outputName, read_elapsed_secs, write_elapsed_secs, elapsed_secs,
 		mask_elapsed_secs, extenddop_elapsed_secs, doppler_elapsed_secs,
 		fft_elapsed_secs, mult_elapsed_secs, ifft_elapsed_secs, incho_elapsed_secs
 		, max_elapsed_secs, savep_elapsed_secs, std_elapsed_secs);

@@ -6,7 +6,7 @@
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
 	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer
-,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs) {
+,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs,string *resultDirectory) {
 
 	TextParser t(configFileName);
 
@@ -34,6 +34,8 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		TextParserSafeCall(t.seek("*REFFILENAME"));
 		fileRefNames[0] = t.getword(); 
 	}
+	TextParserSafeCall(t.seek("*RESULTSDIRECTORY"));
+	*resultDirectory = t.getword();
 	TextParserSafeCall(t.seek("*DDMFREQRES"));
 	*ddmRes = t.getint();
 	TextParserSafeCall(t.seek("*DDMNUMQUANT"));
@@ -68,7 +70,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
 	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer
-, int *dataOffsetBegInterferometric, int samplesAvoidMaxs) {
+, int *dataOffsetBegInterferometric, int samplesAvoidMaxs,string resultDirectory) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -94,6 +96,7 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	if (interfer == false) {
 		cout << "Ref File Name: " << fileRefNames[0] << "\n";
 	}
+	cout << "result directory: " << resultDirectory << "\n";
 	cout << "DDM Res: " << ddmRes << "\n";
 	cout << "DDM Quant: " << ddmQuant << "\n";
 

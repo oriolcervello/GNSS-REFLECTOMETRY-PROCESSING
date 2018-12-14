@@ -121,9 +121,9 @@ inline void __cudaCheckError(const char *file, const int line)
 
 
 void readConfig(const char *, int, int *, int *, int *, int *, int*, int *, int *, int*
-	,  int *, int *, int *, string *, string *,int *, int *,bool *, int *,int *);
+	,  int *, int *, int *, string *, string *,int *, int *,bool *, int *,int *,string *);
 void checkInputConfig(int , const char **, int , int , int , int , int , int, int, int, int
-	,  int *, int *, int *, string *, string *, int , int,bool, int*, int);
+	,  int *, int *, int *, string *, string *, int , int,bool, int*, int,string);
 void planifftFunction(int , int , int , cufftHandle *);
 void planfftFunction(int , int , int , cufftHandle *);
 size_t planMemEstimate(int, int, int);
