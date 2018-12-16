@@ -83,7 +83,7 @@ if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfDa
 
 The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100.
 
-The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and how to change the input method.
+The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
 
 You will find an example in this repo, 'input.ASE'
 
