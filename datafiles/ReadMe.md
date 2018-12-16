@@ -2,8 +2,8 @@ Here will be the files of data to process.
 
 The data will be stored in bits, one bit real one bit complex with symbols 1 or -1(for value 0). One byte will be 4 complex numbers. Program will read size of bytes. Inside each byte bits should be stored in big-endian order.
 
-If you want to perform a given numofFFTs of fftsize with whatever overlap, the length of data with offset 0 in bytes that you will be sting in your dataline = ((numofFFTs x (fftsize-overlap))+overlap)/4
-For adding an offset just add it to the beggining and end of the data in the DATALINE.
+If you want to perform a given numofFFTs of fftsize with whatever overlap, the length of data with offset 0 in bytes that you will be seting in your dataline = ((numofFFTs x (fftsize-overlap))+overlap)/4
+For adding an offset just add it to the beggining and end of the data in the DATALINE also in bytes.
 
 The phase of the doppler of the end of the DATALINE 1 is maintained in the beggining of the DATALINE 2.
 
