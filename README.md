@@ -65,7 +65,7 @@ In this file you will need to fill each variable with the argument desired.
     *BLOCKSIZE 1024  <---Threads per blok(to know max thread/blok of your GPU go to other directory)
     *INTERFEROMETIC 1 <---Flag to run the program in interferometric(1) or conventionsl(0)
     *SAMPLESAVOIDMAX 0 <--- Samples to avoid at the begining of the correlation to compute the maximum
-    *PEAKRANGESTD 64  <---Samples to avoid arround the peak for the STD computation (Peak in the mid sample)
+    *PEAKRANGESTD 65  <---Samples to avoid arround the peak for the STD computation (Peak in the mid sample)
     *PEAKSAMPLESTOSAVE 311  <---Samples to save arround the peak (Peak in the mid sample)
     *REFFILENAME datafiles/ref/clean_L1CA_14.bin <---Path of the reference file in conventional mode (avoided on interferometric)
     *RESULTSDIRECTORY results/ <---Path to store the results, be carefull they can overwrite
@@ -84,6 +84,8 @@ if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfDa
 The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100.
 
 The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and how to change the input method.
+
+You will find an example in this repo, 'input.ASE'
 
 ## Outputs
 The results will be stored on the directory set on configFile. If we set /results the output files will be there.
