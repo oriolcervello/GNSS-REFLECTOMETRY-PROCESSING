@@ -11,11 +11,7 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 ## Contents
 Project is still under development, further information and modifications will be added.
 
--main.cu: main program
 
--functions.cu: host and device functions
-
--extra/TextParser.cu: text parser
 
 
 ## Installation of CUDA
@@ -26,16 +22,18 @@ Requirements of all you need a pc with a Nvidia GPU able to run CUDA.
 
 Insturctions: 
 
-1. Install [VisualStudio](https://visualstudio.microsoft.com/vs/), required by CUDA. Ensure to add C++ Packages, specially SDKs.
-2. If you got old GPU drivers or you want to update them I recomend running [DDU](https://www.guru3d.com/files-details/display-driver-uninstaller-download.html) to clean the GPU before installing new drivers.
+1. Install [VisualStudio](https://visualstudio.microsoft.com/vs/), required by CUDA. Ensure to add C++ Packages, specially last version of  SDKs.
+2. If you got old GPU drivers or you want to update them I recomend running [DDU](https://www.guru3d.com/files-details/display-driver-uninstaller-download.html) to clean the GPU before installing new drivers. Look for your [drivers](https://www.nvidia.com/Download/index.aspx) and install them.
 3. Download [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads).
-4. I recomend Personalized installation and just install CUDA option which is the CUDA itself and the Driver component if you want to update it. If you want to update drivers don't forget step 2.
+4. I recomend Personalized installation and just install CUDA option which is the CUDA itself.
 5. Ensure to have on Path the following ones:
 c:\program files\nvidia gpu computing toolkit\cuda\v10.0\libnvvp;
 c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
 c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.15.26726\bin\hostx64\x64;
 
 Now CUDA should be working fine.
+
+For testing CUDA I recomend go to others and try to run DeviceProperties.cu, there you will find how.
 
 To build the program go to the Build and Run section.
 
@@ -45,7 +43,7 @@ To build the program open the directory on the Powershell.
 
 You can build the program with the following comand:
 
-    nvcc extra/TextParser.cu functions.cu main.cu -lnpps -lcufft -o main
+    nvcc src/TextParser.cu src/GlobalFunc.cu src/IOFunc.cu src/HostFunc.cu src/main.cu -lnpps -lcufft -o main
 
 To run it, we will need to pass 2 arguments:
 1. input.ASE (or whatever name is your input configuration file with that format)
@@ -65,20 +63,32 @@ In this file you will need to fill each variable with the argument desired.
     *OVERLAP 32  <---Samples of overlap
     *FSAMPLING 32736000  <---Sampling Freq. [hz]
     *BLOCKSIZE 1024  <---Threads per blok(to know max thread/blok of your GPU go to other directory)
+    *INTERFEROMETIC 1 <---Flag to run the program in interferometric(1) or conventionsl(0)
+    *SAMPLESAVOIDMAX 0 <--- Samples to avoid at the begining of the correlation to compute the maximum
     *PEAKRANGESTD 64  <---Samples to avoid arround the peak for the STD computation (Peak in the mid sample)
     *PEAKSAMPLESTOSAVE 311  <---Samples to save arround the peak (Peak in the mid sample)
+    *REFFILENAME datafiles/ref/clean_L1CA_14.bin <---Path of the reference file in conventional mode (avoided on interferometric)
+    *RESULTSDIRECTORY results/ <---Path to store the results, be carefull they can overwrite
+    *DDMFREQRES 25 <--- Resolution in Hz between to different dopplers if computing DDM
+    *DDMNUMQUANT 1 <--- Quantity of dopplers to compute in a DDM, 1 for single computation
     *QUANTDATALINES 4  <--- Datalines to compute should be de same as argument 2
 
-Datalines should have this format: DataFileName BeginingOfData EndOfData DopplerFreq RefSignalFileName
+Datalines should have this format if INTERFEROMETRIC=0 (conventional mode): DataFileName BeginingOfData EndOfData DopplerFreq
 
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin
+
+if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfData DopplerFreq RefFileName BeginingOfDataRef
+
+    *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin 100
+
+The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100.
 
 The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and how to change the input method.
 
 ## Outputs
-The results will be stored on results directory.
+The results will be stored on the directory set on configFile. If we set /results the output files will be there.
 
-There is a ReadMe.md on /results directory.
+There is a ReadMe.md on /results directory explaining the output files.
 
 ## Licence
 You may find it in a specific licence file.
