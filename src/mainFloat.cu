@@ -17,6 +17,48 @@ using namespace std;
 #include "GlobalFunc.cuh"
 #include "IOFunc.cuh"
 
+
+
+
+
+void prepareDataFloat( int dataOffsetEnd,int dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string fileDataNames,
+	char *deviceBytesOfData, int blockSize, int ddmQuant, int samplesOfSignal, int samplesWithOverlap, cufftComplex *deviceDataFile1
+     ,int numofFFTs, int fftsize, cufftComplex *hostDataFile1, chrono::nanoseconds *elapsed_read, chrono::nanoseconds *mask_elapsed
+	,chrono::nanoseconds *extenddop_elapsed) {
+	
+	auto begin = std::chrono::high_resolution_clock::now();
+	//READ DATA
+	readdata(dataOffsetEnd-dataOffsetBeg, dataOffsetBeg, hostDataFile1, fileDataNames);
+	//readRealData(dataOffsetEnd - dataOffsetBeg, dataOffsetBeg, bytesToRead, hostBytesOfData, fileDataNames);
+
+	CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
+	//CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
+	cudaDeviceSynchronize();
+	*elapsed_read = chrono::high_resolution_clock::now() - (begin);
+
+	//MASK AND SHIFT
+	auto maskbeg = std::chrono::high_resolution_clock::now();
+	//int numBlocks = (bytesToRead + blockSize - 1) / blockSize;
+	//maskAndShift << <numBlocks, blockSize >> > (deviceBytesOfData, deviceDataFile1, bytesToRead);
+	//CudaCheckError();
+	//cudaDeviceSynchronize();
+	*mask_elapsed = chrono::high_resolution_clock::now() - maskbeg;
+
+	//EXTEND FOR DOPPLER
+	auto extenddopbeg = std::chrono::high_resolution_clock::now();
+	if (ddmQuant > 1) {
+		int numBlocks = (samplesOfSignal + blockSize - 1) / blockSize;
+		extendRefSignal << <numBlocks, blockSize >> > (samplesWithOverlap, deviceDataFile1, numofFFTs * fftsize);
+		CudaCheckError();
+		cudaDeviceSynchronize();
+	}
+	*extenddop_elapsed = chrono::high_resolution_clock::now() - extenddopbeg;
+
+
+}
+
+
+
 int main(int argc, const char* argv[]) {
 	cudaDeviceReset();//reset device
 
@@ -56,6 +98,7 @@ int main(int argc, const char* argv[]) {
 	int numBlocks, nMaxBufferSize,nStdBufferSize,i,k,samplesDoppler= samplesOfSignal;
 	int stdLength = (fftsize / 2) - ((peakSamplesToSave) / 2) - 1;
 	unsigned long long samplePhaseMantain;
+	//int checkMax
 	if (ddmQuant > 1) {
 		samplesDoppler = samplesWithOverlap;
 	}
@@ -99,14 +142,14 @@ int main(int argc, const char* argv[]) {
 	write_elapsed_secs = new long long[numofDataLines];
 	elapsed_secs = new long long[numofDataLines];
 
-	hostBytesOfData = (char *)malloc(sizeof(char) * bytesToRead);
+	hostBytesOfData = (char *)malloc(sizeof(char) * 1);
 	hostarrayPos = new int[inchoerentNumofFFT];
 	hostarrayMaxs = new Npp32f[inchoerentNumofFFT];
 	hostarrayStd = new Npp32f[inchoerentNumofFFT];
 	hostarrayMean = new Npp32f[inchoerentNumofFFT];
 	hostDataFile1 = (cufftComplex *)malloc(sizeof(cufftComplex) * samplesWithOverlap);
 	hostDataFile2 = (cufftComplex *)malloc(sizeof(cufftComplex) * device2quant);
-	CudaSafeCall(cudaMalloc(&deviceBytesOfData, sizeof(char)*bytesToRead));
+	CudaSafeCall(cudaMalloc(&deviceBytesOfData, sizeof(char)*1));
 	CudaSafeCall(cudaMalloc(&deviceDataFile1, sizeof(cufftComplex)*samplesWithOverlap));
 	CudaSafeCall(cudaMalloc(&deviceDataToSave, sizeof(cufftComplex)*peakSamplesToSave*numofFFTs*ddmQuant));
 	CudaSafeCall(cudaMalloc(&deviceDataFile2, sizeof(cufftComplex)*device2quant));
@@ -127,7 +170,7 @@ int main(int argc, const char* argv[]) {
 	cout<< "\n-MEMORY: \n";
 	cout<< "Total GPU mem: "<< totalMem <<" bytes\n";
 	size_t planBuffer = planMemEstimate(fftsize, numofFFTs, overlap);
-	long long allocatedMem = sizeof(char)*bytesToRead + sizeof(cufftComplex)*samplesWithOverlap + nMaxBufferSize +
+	long long allocatedMem =  sizeof(cufftComplex)*samplesWithOverlap + nMaxBufferSize +
 		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*device2quant + sizeof(Npp32f)*inchoerentNumofFFT*fftsize+
 		sizeof(Npp32f)*inchoerentNumofFFT*fftsize + sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + nStdBufferSize;
 	cout << "GPU mem allocated: " << allocatedMem <<" bytes\n";
@@ -145,14 +188,14 @@ int main(int argc, const char* argv[]) {
 		
 		auto begin = std::chrono::high_resolution_clock::now();
 		//READ, MASK, AND EXTEND
-		prepareData(dataOffsetEnd[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i],
+		prepareDataFloat(dataOffsetEnd[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i],
 			deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal, samplesWithOverlap, deviceDataFile1
 			, numofFFTs, fftsize, hostDataFile1,&elapsed_read, &mask_elapsed
 			, &extenddop_elapsed);
 
 		if (interferometic == true) {
 			chrono::nanoseconds elapsed_read_inter, mask_elapsed_inter, extenddop_elapsed_inter;
-			prepareData( dataOffsetEnd[i]+(dataOffsetBegInterferometric[i]-dataOffsetBeg[i]), dataOffsetBegInterferometric[i],
+			prepareDataFloat( dataOffsetEnd[i]+(dataOffsetBegInterferometric[i]-dataOffsetBeg[i]), dataOffsetBegInterferometric[i],
 				bytesToRead, hostBytesOfData, fileRefName[i],deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal,
 				samplesWithOverlap, deviceDataFile2, numofFFTs, fftsize, hostDataFile2,&elapsed_read_inter, &mask_elapsed_inter
 				, &extenddop_elapsed_inter);
