@@ -1,6 +1,6 @@
-Instructions to read files of data in float will be added.
+To build the program to be able to read this type of signals run the scripts/build.cmd with argument 3, or if you use the GUI build the version to read float inputs
 
-This are files of example:
+This are files of example, you will be able to see how the data is structured:
 
 ### prn_L1CA_32_100.bin
 

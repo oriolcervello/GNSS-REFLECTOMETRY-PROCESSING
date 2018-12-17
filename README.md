@@ -1,4 +1,4 @@
-# GNSS-REFLECTOMETRY-PROCESSING
+﻿# GNSS-REFLECTOMETRY-PROCESSING
 
 The main goal of the project is to process reflected GNSS signals to obtain Earth measurements.
 This program is using the GPU to accelerate the computation time. For a input signal of a GNSS reflected signal
@@ -39,22 +39,25 @@ To build the program go to the Build and Run section.
 
 ## Build and Run
 
-To build the program open the directory on the Powershell.
+To build the program you can do it with the GUI Install found in [/Gui](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/GUI). There you will have also the instructions in how to do it.
 
-You can build the program with the following comand:
+Or you can build it with the script build.cmd found in [/scripts](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/scripts). Also you will have also the instructions in how to do it there.
 
-    nvcc src/TextParser.cu src/GlobalFunc.cu src/IOFunc.cu src/HostFunc.cu src/main.cu -lnpps -lcufft -o main
 
+To run the program you can do it with the GUI GnssProcessing found in [/Gui](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/GUI). There you will have also the instructions in how to do it.
+
+Or you can do it by command line from cmd or powershell opened in the repo directory. 
 To run it, we will need to pass 2 arguments:
 1. input.ASE (or whatever name is your input configuration file with that format)
 2. number of datalines to process on that run
 
 Also on the PowerShell: (example: 1: input.ASE 2: 4 datalines)
 
-    .\main input.ASE 4
+    .\bin\main input.ASE 4
 
 
 ## Configuration File (input.ASE)
+
 In this file you will need to fill each variable with the argument desired.
 
     *FFTSIZE 32768  <---Size of the FFT
@@ -83,14 +86,15 @@ if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfDa
 
 The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100.
 
-The BeginingOfData and EndOfData numbers are bytes. In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
+The BeginingOfData and EndOfData numbers are bytes by default. In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
+In datafiles/examples_in_float you will find that is possible to pass data in float form.
 
-You will find an example in this repo, 'input.ASE'
+You will find an example in this repo of 'input.ASE'
 
 ## Outputs
-The results will be stored on the directory set on configFile. If we set /results the output files will be there.
+The results will be stored on the directory set on configFile. If we set /results the output files will be there. Be careful that if you run again the program results will overwrite if the same result folder is selected.
 
-There is a ReadMe.md on /results directory explaining the output files.
+There is a ReadMe.md on /results directory explaining the output files and how to read them.
 
 ## Licence
 You may find it in a specific licence file.
