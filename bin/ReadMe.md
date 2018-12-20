@@ -1,1 +1,1 @@
-In this folder will be the build binaries. No need to do anything here.
+In this folder will be the build binaries.

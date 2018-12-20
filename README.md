@@ -89,7 +89,7 @@ The length of the Reference will be the same as the Data but we can set an offse
 The BeginingOfData and EndOfData numbers are bytes by default. In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
 In datafiles/examples_in_float you will find that is possible to pass data in float form.
 
-You will find an example in this repo of 'input.ASE'
+You will find an example in this repo of an 'input.ASE'
 
 ## Outputs
 The results will be stored on the directory set on configFile. If we set /results the output files will be there. Be careful that if you run again the program results will overwrite if the same result folder is selected.

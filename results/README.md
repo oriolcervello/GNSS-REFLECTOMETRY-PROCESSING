@@ -1,10 +1,10 @@
-Here will be stored the results
+Here will be stored the results if /results is set as RESULTSDIRECTORY.
 
 ### Maximums File:
 
 Here are maximum value and position, the std and doppler of each dataline.
 
-To Read this files you can play the script [ReadMaxs.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/results/ReadMaxs.m) found in this directory.
+To Read this files you can play the script [ReadMaxs.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/scripts/ReadMaxs.m).
 
 ### PeakIterationX.bin with NO DDM (DDMQUANT=1):
 
@@ -16,7 +16,7 @@ Information is stored in binary and are complex floats (32bits real + 32 bits im
 
 Re1 Co1 Re2 Co2 .... Re311 Co311 (311 becouse it was decleared at PEAKSAMPLESTOSAVE, if not whatever the value setted, then the following peak) Re1 Co1 ...
 
-To read/plot this type of file you can play the [PlotSignal.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/results/PlotSignal.m) found in this directory.
+To read/plot this type of file you can play the script [PlotSignal.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/scripts/PlotSignal.m).
 
 ### PeakIterationX.bin with DDM (DDMQUANT>1):
 
@@ -27,7 +27,7 @@ Information is stored in binary and are complex floats (32bits real + 32 bits im
 
 Re1 Co1 Re2 Co2 .... Re311 Co311 (311 becouse it was decleared at PEAKSAMPLESTOSAVE, if not whatever the value setted, then the following peak) Re1 Co1 ...
 
-To read/plot this type of file you can play the [PlotDDM.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/results/PlotDDM.m) found in this directory.
+To read/plot this type of file you can play the script [PlotDDM.m](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/blob/master/scripts/PlotDDM.m).
 
 ### Times:
 
