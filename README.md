@@ -80,11 +80,12 @@ if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfDa
 
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin 100
 
-The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100. If interferometric the line above *REFFILENAME will be avoided.
+The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100. If interferometric the line above * REFFILENAME will be avoided.
 
-The BeginingOfData and EndOfData numbers are bytes by default. To compute them easy starting with offset 0, BeginingOfData=0 and EndOfData=((numofFFTs*(fftsize-overlap))+overlap)*2/8. We multiply by 2 because they are complex samples and divide by 8 as we want bytes.
-The following line would be BeginingOfData=previous_EndOfData (as it reads from BeginingOfData to EndOfData-1 ) and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)*2/8.
-Any line with offset would be BeginingOfData= whatever offset in complex bytes and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)*2/8.
+The BeginingOfData and EndOfData numbers are bytes by default. To compute them easy starting with offset 0, BeginingOfData=0 and EndOfData=((numofFFTs*(fftsize-overlap))+overlap)* 2/8. We multiply by 2 because they are complex samples and divide by 8 as we want bytes.
+
+The following line would be BeginingOfData=previous_EndOfData (as it reads from BeginingOfData to EndOfData-1 ) and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)* 2/8.
+Any line with offset would be BeginingOfData= whatever offset in complex bytes and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)* 2/8.
 
 In case that the program is built to read different type of input (float or int16) we will be reading samples directly BeginingOfData=0 and EndOfData=((numofFFTs*(fftsize-overlap))+overlap) and the following lines as BeginingOfData=previous_EndOfData and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap).
 
