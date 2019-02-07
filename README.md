@@ -1,17 +1,13 @@
 ﻿# GNSS-REFLECTOMETRY-PROCESSING
 
-The main goal of the project is to process reflected GNSS signals to obtain Earth measurements.
-This program is using the GPU to accelerate the computation time. For a input signal of a GNSS reflected signal
-makes the cross-correlation and gives as output all the information of the peak of correlation.
+The main goal of the project is to process GNSS signals to obtain Earth measurements, originally for the MIR instrument. The aim is to process real GNSS-R data 
+in conventional or interferometric mode
+and able to compute DDMs at any coherent/incoherent correlation times. 
+This program is using the GPU to accelerate the computation time.
 
 All the contents were developed for the [Passive Remote Sensing Laboratory (RSLab)](http://www.tsc.upc.edu/rslab/Passive%20Remote%20Sensing/welcome) of the [Universitat Politècnica de Catalunya (UPC)](http://www.upc.edu/?set_language=en).
 
 New versions of this program may be found at [GitHub](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/) 
-
-## Contents
-Project is still under development, further information and modifications will be added.
-
-
 
 
 ## Installation of CUDA
@@ -27,9 +23,9 @@ Insturctions:
 3. Download [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads).
 4. I recomend Personalized installation and just install CUDA option which is the CUDA itself.
 5. Ensure to have on Path the following ones:
-c:\program files\nvidia gpu computing toolkit\cuda\v10.0\libnvvp;
-c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
-c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.15.26726\bin\hostx64\x64;
+    c:\program files\nvidia gpu computing toolkit\cuda\v10.0\libnvvp;
+    c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
+    c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.15.26726\bin\hostx64\x64;
 
 Now CUDA should be working fine.
 
@@ -40,8 +36,8 @@ To build the program go to the Build and Run section.
 ## Build and Run
 
 To build the program you can do it with the GUI Install found in [/Gui](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/GUI). There you will have also the instructions in how to do it.
-
 Or you can build it with the script build.cmd found in [/scripts](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/scripts). Also you will have also the instructions in how to do it there.
+Althoug the originall programs is for the MIR instrument there are different options of building the program for adaptations to read different inputs types.
 
 
 To run the program you can do it with the GUI GnssProcessing found in [/Gui](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/GUI). There you will have also the instructions in how to do it.
@@ -60,7 +56,7 @@ Also on the PowerShell: (example: 1: input.ASE 2: 4 datalines)
 
 In this file you will need to fill each variable with the argument desired.
 
-    *FFTSIZE 32768  <---Size of the FFT
+    *FFTSIZE 32768  <---Size of the FFT, each one is a complex sample
     *NUMOFFFTS 20  <---# of FFT to do simultaneously in one dataline
     *QUANTINCOHAVER 4   <---# of coherent IFFT to averag for the incoherent
     *OVERLAP 32  <---Samples of overlap
@@ -76,7 +72,7 @@ In this file you will need to fill each variable with the argument desired.
     *DDMNUMQUANT 1 <--- Quantity of dopplers to compute in a DDM, 1 for single computation
     *QUANTDATALINES 4  <--- Datalines to compute should be de same as argument 2
 
-Datalines should have this format if INTERFEROMETRIC=0 (conventional mode): DataFileName BeginingOfData EndOfData DopplerFreq
+Datalines should be following the variables above and should have this format if INTERFEROMETRIC=0 (conventional mode): DataFileName BeginingOfData EndOfData DopplerFreq
 
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin
 
@@ -84,9 +80,15 @@ if INTERFEROMETRIC=1 (interferometric mode): DataFileName BeginingOfData EndOfDa
 
     *DATALINE datafiles/prn_L1CA_32_100.bin 0 654752 0 datafiles/prn_L1CA_32.bin 100
 
-The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100.
+The length of the Reference will be the same as the Data but we can set an offset, ex: in this line 100. If interferometric the line above *REFFILENAME will be avoided.
 
-The BeginingOfData and EndOfData numbers are bytes by default. In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
+The BeginingOfData and EndOfData numbers are bytes by default. To compute them easy starting with offset 0, BeginingOfData=0 and EndOfData=((numofFFTs*(fftsize-overlap))+overlap)*2/8. We multiply by 2 because they are complex samples and divide by 8 as we want bytes.
+The following line would be BeginingOfData=previous_EndOfData (as it reads from BeginingOfData to EndOfData-1 ) and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)*2/8.
+Any line with offset would be BeginingOfData= whatever offset in complex bytes and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap)*2/8.
+
+In case that the program is built to read different type of input (float or int16) we will be reading samples directly BeginingOfData=0 and EndOfData=((numofFFTs*(fftsize-overlap))+overlap) and the following lines as BeginingOfData=previous_EndOfData and EndOfData=BeginingOfData+((numofFFTs*(fftsize-overlap))+overlap).
+
+In datafiles/ReadMe.md you will find how the data is structured and more useful info on how to build the datalines.
 In datafiles/examples_in_float you will find that is possible to pass data in float form.
 
 You will find an example in this repo of an 'input.ASE'

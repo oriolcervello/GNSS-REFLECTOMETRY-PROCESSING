@@ -31,4 +31,4 @@ To read/plot this type of file you can play the script [PlotDDM.m](https://githu
 
 ### Times:
 
-Times of comutation in microseconds per dataline.
+Times of computation in microseconds per dataline.

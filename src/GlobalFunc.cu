@@ -184,3 +184,16 @@ __global__ void maskAndShift(char *devicedata, cuComplex *Dcomplexdata, int tota
 
 	}
 }
+
+
+__global__ void copyInt2Float(__int16 *deviceIntData, cuComplex *deviceFloatData, int length) {
+
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+	for (int i = index; i < length/2; i += stride) {
+		deviceFloatData[i].x = float(deviceIntData[2*i]);
+		deviceFloatData[i].y = float(deviceIntData[2*i+1]);
+	}
+
+
+}

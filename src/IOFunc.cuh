@@ -23,6 +23,7 @@ using namespace std;
 #define IOFUNC
 void readdata(int, int, cufftComplex *, string);
 void readRealData(int, int, int, char *, string);
+void readdataInt(int , int , __int16 *, string );
 void writedata(int, cufftComplex *, string);
 void writeMaxs(int, Npp32f *, int *, Npp32f *, Npp32f *, int, string, int, int, int, int);
 void writeIncoh(int, cuComplex *, string);

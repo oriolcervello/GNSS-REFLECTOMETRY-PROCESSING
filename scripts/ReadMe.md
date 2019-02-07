@@ -17,6 +17,9 @@ Also with this program you will be able to check your max Blocksize (maxThreadPe
 · 3 -> To build the program with slight variations to read the input data from a .bin file also but reading floats instead of bits as unit of data. You will find more information about this in [datafiles/examples_in_float](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/tree/master/datafiles/examples_in_float)
 
 
+· 4 -> To build the prprogram with slight variations to read the input data from a .bin file also but reading Int16 instead of bits as unit of data.
+
+
 To call the script open cmd in this directory, if for example you want option 1:
 
     .\build.cmd 1

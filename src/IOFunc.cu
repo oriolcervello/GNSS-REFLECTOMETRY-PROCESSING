@@ -50,6 +50,25 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead, char *data, st
 	else cout << "Unable to open file of Real Data for reading " << name << "\n";
 }
 
+void readdataInt(int length, int offsetFromBeg, __int16 *data, string name)
+{
+	
+	ifstream myfile;
+	myfile.open(name, ios::binary);
+	//float num1,num2;
+
+	if (myfile.is_open())
+	{
+		myfile.seekg(offsetFromBeg * sizeof(__int16));
+
+		myfile.read((char*)data, 2* length * sizeof(__int16));
+		
+		myfile.close();
+	}
+	else cout << "Unable to open file of floats for reading " << name << "\n";
+
+}
+
 //WRITE FUNCTIONS
 
 void writeIncoh(int N, cuComplex *data1, string name) {

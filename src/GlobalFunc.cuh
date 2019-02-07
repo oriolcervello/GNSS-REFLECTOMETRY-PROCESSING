@@ -24,5 +24,6 @@ __global__ void scale(int, cufftComplex *, int);
 __global__ void maskAndShift(char *, cuComplex *, int);
 __global__ void savePeak(int, cufftComplex *, cufftComplex *, int, int, int, int *, int);
 __global__ void selectMaxs(int, int, int, int *, Npp32f *);
+__global__ void copyInt2Float(__int16 *, cuComplex *, int);
 
 #endif

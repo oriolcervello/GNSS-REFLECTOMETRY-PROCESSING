@@ -59,7 +59,7 @@ int main(int argc, const char* argv[]) {
 	if (ddmQuant > 1) {
 		samplesDoppler = samplesWithOverlap;
 	}
-
+	
 
 	char *hostBytesOfData, *deviceBytesOfData;
 	int *devicearrayPos,*hostarrayPos;
@@ -121,7 +121,7 @@ int main(int argc, const char* argv[]) {
 	CudaSafeCall(cudaMalloc((void **)(&pMaxDeviceBuffer), nMaxBufferSize));
 	cudaDeviceSynchronize();
 	
-	//MMEMORY INFO
+	//MEMORY INFO
 	size_t freeMem, totalMem;
 	cudaMemGetInfo(&freeMem, &totalMem);
 	cout<< "\n-MEMORY: \n";
