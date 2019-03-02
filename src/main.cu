@@ -131,8 +131,15 @@ int main(int argc, const char* argv[]) {
 		sizeof(cufftComplex)*peakSamplesToSave*numofFFTs + sizeof(cufftComplex)*device2quant + sizeof(Npp32f)*inchoerentNumofFFT*fftsize+
 		sizeof(Npp32f)*inchoerentNumofFFT*fftsize + sizeof(int)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + sizeof(Npp32f)*inchoerentNumofFFT + nStdBufferSize;
 	cout << "GPU mem allocated: " << allocatedMem <<" bytes\n";
-	cout << "GPU total aprox mem used: " << allocatedMem+ planBuffer <<" bytes\n\n";
-	
+	cout << "GPU total aprox mem used: " << allocatedMem+ planBuffer <<" bytes\n";
+	long long allocatedRAM = sizeof(cufftComplex) * device2quant+ sizeof(cufftComplex) * samplesWithOverlap + sizeof(Npp32f) *inchoerentNumofFFT*3 + sizeof(int) *inchoerentNumofFFT+
+		sizeof(char) * bytesToRead+ numofDataLines*13* sizeof(long long) +sizeof(int)*26+ numofDataLines*4*sizeof(int)+sizeof(fileRefName)+sizeof(fileDataNames)+sizeof(bool);
+	cout << "RAM total aprox mem used: " << allocatedRAM << " bytes\n\n";
+
+
+
+
+
 	//READ, EXTEND AND FFT OF REF SIGNAL
 	if (interferometic == false) {
 		prepareReference(fftsize, overlap, blockSize, hostDataFile2, deviceDataFile2, fileRefName[0]);

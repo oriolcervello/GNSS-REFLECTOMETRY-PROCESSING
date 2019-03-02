@@ -109,8 +109,8 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 		cout << dataOffsetEnd[i] << "  ";
 		cout << doppler[i] << "  ";
 		if (interfer == true) {
-			cout << fileRefNames[0] << "  ";
-			cout << dataOffsetBegInterferometric << "\n";
+			cout << fileRefNames[i] << "  ";
+			cout << dataOffsetBegInterferometric[i] << "\n";
 		}
 		else {
 			cout << "\n";
