@@ -19,13 +19,13 @@ Requirements of all you need a pc with a Nvidia GPU able to run CUDA.
 Insturctions: 
 
 1. Install [VisualStudio](https://visualstudio.microsoft.com/vs/), required by CUDA. Ensure to add C++ Packages, specially last version of  SDKs.
-2. If you got old GPU drivers or you want to update them I recomend running [DDU](https://www.guru3d.com/files-details/display-driver-uninstaller-download.html) to clean the GPU before installing new drivers. Look for your [drivers](https://www.nvidia.com/Download/index.aspx) and install them.
+2. Install newest drivers. Look for yours [drivers](https://www.nvidia.com/Download/index.aspx) and install them.
 3. Download [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads).
-4. I recomend Personalized installation and just install CUDA option which is the CUDA itself.
+4. I recomend Personalized installation and just install CUDA option which is the CUDA itself. Uncheck other options.
 5. Ensure to have on Path the following ones:
     c:\program files\nvidia gpu computing toolkit\cuda\v10.0\libnvvp;
     c:\program files\nvidia gpu computing toolkit\cuda\v10.0\bin;
-    c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.15.26726\bin\hostx64\x64;
+    and the path to "cl.exe" found in the visual studio folder, can change between versions of VS but usually found inside "VC/"..."bin/" directories
 
 Now CUDA should be working fine.
 

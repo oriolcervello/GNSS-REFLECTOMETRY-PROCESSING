@@ -24,7 +24,10 @@ void readdata(int length, int offsetFromBeg, cufftComplex *data, string name)
 		}*/
 		myfile.close();
 	}
-	else cout << "Unable to open file of floats for reading " << name << "\n";
+	else { 
+		cout << "ERROR: Unable to open file of floats for reading " << name << "\n";
+		exit(1);
+	}
 }
 
 void readRealData(int length, int offsetFromBeg, int bytesToRead, char *data, string name)
@@ -47,7 +50,10 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead, char *data, st
 			memset(&data[length], 0, bytesToRead - length);
 		}
 	}
-	else cout << "Unable to open file of Real Data for reading " << name << "\n";
+	else { 
+		cout << "ERROR: Unable to open file of Real Data for reading " << name << "\n";
+		exit(1);
+	}
 }
 
 void readdataInt(int length, int offsetFromBeg, __int16 *data, string name)
@@ -65,7 +71,10 @@ void readdataInt(int length, int offsetFromBeg, __int16 *data, string name)
 		
 		myfile.close();
 	}
-	else cout << "Unable to open file of floats for reading " << name << "\n";
+	else {
+		cout << "ERROR: Unable to open file of Ints16 for reading " << name << "\n"; 
+		exit(1);
+	}
 
 }
 
@@ -85,7 +94,10 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 		myfile.close();
 	}
 
-	else cout << "Unable to open file of incoh for writting " << name << "\n";
+	else { 
+		cout << "ERROR: Unable to open file of incoh for writting " << name << "\n"; 
+		exit(1);
+	}
 }
 
 void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd, Npp32f *hostarrayMean, int doppler, string name, int iteration, int ddmRes,
@@ -109,7 +121,10 @@ void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarraySt
 		myfile.close();
 	}
 
-	else cout << "Unable to open file of Maxs " << name << "\n";
+	else {
+		cout << "ERROR: Unable to open file of Maxs " << name << "\n";
+		exit(1);
+	}
 }
 
 void writedata(int N, cufftComplex *data1, string name) {
@@ -128,7 +143,10 @@ void writedata(int N, cufftComplex *data1, string name) {
 		myfile.close();
 	}
 
-	else cout << "Unable to open file of data to write " << name << "\n";
+	else {
+		cout << "ERROR: Unable to open file of data to write " << name << "\n";
+		exit(1);
+	}
 }
 
 void writetime(int N, string name, long long *readtime, long long *writetime, long long *looptime
@@ -155,5 +173,8 @@ void writetime(int N, string name, long long *readtime, long long *writetime, lo
 		myfile.close();
 	}
 
-	else cout << "Unable to open file of times " << name << "\n";
+	else {
+		cout << "ERROR: Unable to open file of times " << name << "\n";
+		exit(1);
+	}
 }
