@@ -24,19 +24,19 @@ int main(int argc, const char* argv[]) {
 	int fftsize, fSampling, numofFFTs, overlap, quantofAverageIncoherent, blockSize, peakRangeStd, peakSamplesToSave,
 		samplesAvoidMax,ddmRes, ddmQuant;
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
-	bool interferometic;
+	bool interferometic,writeoutputs=1;
 	string *fileDataNames, *fileRefName, resultDirectory;
 	int *dataOffsetBeg, *dataOffsetEnd,*dataOffsetBegInterferometric;
-	int *doppler;
+	float *doppler;
 
 	fileRefName = new string[numofDataLines];
 	fileDataNames = new string[numofDataLines];
 	dataOffsetBeg = new int[numofDataLines];
 	dataOffsetBegInterferometric = new int[numofDataLines];
 	dataOffsetEnd = new int[numofDataLines];
-	doppler = new int[numofDataLines];
+	doppler = new float[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax, &resultDirectory);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax, &resultDirectory,&writeoutputs);
 	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax, resultDirectory);
 
 	//OTHER DECLARATIONS
@@ -175,13 +175,13 @@ int main(int argc, const char* argv[]) {
 
 		//MULTIPLY BY DOPPLER
 		auto dopplerbeg = std::chrono::high_resolution_clock::now();
-		if (doppler[i] != 0) {
-			samplePhaseMantain = (i * fftsize*numofFFTs);
-			numBlocks = (samplesDoppler + blockSize - 1) / blockSize;
-			applyDoppler << <numBlocks, blockSize >> > (samplesDoppler, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain, fftsize * numofFFTs, ddmQuant, ddmRes, fftsize);
-			CudaCheckError();
-			cudaDeviceSynchronize();
-		}
+		
+		samplePhaseMantain = (i * fftsize*numofFFTs);
+		numBlocks = (samplesDoppler + blockSize - 1) / blockSize;
+		applyDoppler << <numBlocks, blockSize >> > (samplesDoppler, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain, fftsize * numofFFTs, ddmQuant, ddmRes, fftsize);
+		CudaCheckError();
+		cudaDeviceSynchronize();
+		
 		auto doppler_elapsed = chrono::high_resolution_clock::now() - dopplerbeg;
 		
 		//CHECK: doppler (only for printing doppler)
@@ -302,10 +302,11 @@ int main(int argc, const char* argv[]) {
 		outputName = resultDirectory+"Maximums" + to_string(i) + ".bin";
 		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
 		
-		outputName = resultDirectory + "PeaksIteration" + to_string(i) + ".bin";
-		cout << outputName << "\n";
-		writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
-	
+		if (writeoutputs == 1) {
+			outputName = resultDirectory + "PeaksIteration" + to_string(i) + ".bin";
+			cout << outputName << "\n";
+			writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
+		}
 		//ELAPSED TIME
 		auto elapsed_write = chrono::high_resolution_clock::now() - writeBeg;
 		auto elapsed_total = chrono::high_resolution_clock::now() - begin;

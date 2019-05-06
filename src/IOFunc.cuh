@@ -25,7 +25,7 @@ void readdata(int, int, cufftComplex *, string);
 void readRealData(int, int, int, char *, string);
 void readdataInt(int , int , __int16 *, string );
 void writedata(int, cufftComplex *, string);
-void writeMaxs(int, Npp32f *, int *, Npp32f *, Npp32f *, int, string, int, int, int, int);
+void writeMaxs(int, Npp32f *, int *, Npp32f *, Npp32f *, float, string, int, int, int, int);
 void writeIncoh(int, cuComplex *, string);
 void writetime(int, string, long long *, long long *, long long *, long long *, long long *, long long *,
 	long long *, long long *, long long *, long long *, long long *, long long *, long long *);

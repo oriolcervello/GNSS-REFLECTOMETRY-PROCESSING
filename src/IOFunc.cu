@@ -100,7 +100,7 @@ void writeIncoh(int N, cuComplex *data1, string name) {
 	}
 }
 
-void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd, Npp32f *hostarrayMean, int doppler, string name, int iteration, int ddmRes,
+void writeMaxs(int N, Npp32f *dataMaxValue, int *dataMaxPos, Npp32f *hostarrayStd, Npp32f *hostarrayMean, float doppler, string name, int iteration, int ddmRes,
 	int ddmQuant, int origIncohNum) {
 	float freq, aux;
 	ofstream myfile;

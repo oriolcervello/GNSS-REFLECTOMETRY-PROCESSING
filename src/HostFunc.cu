@@ -5,11 +5,12 @@
 //INPUT CONFIG PARSER FUNCTIONS
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
-	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer
-,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs,string *resultDirectory) {
+	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, float *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer
+,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs,string *resultDirectory,bool *writeoutputs) {
 
 	TextParser t(configFileName);
-
+	TextParserSafeCall(t.seek("*WRITEWAVEFORM"));
+	*writeoutputs = t.getint();
 	TextParserSafeCall(t.seek("*FFTSIZE"));
 	*fftsize = t.getint();
 	TextParserSafeCall(t.seek("*NUMOFFFTS"));
@@ -60,7 +61,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		fileNames[i] = t.getword();
 		dataOffsetBeg[i] = t.getint();
 		dataOffsetEnd[i] = t.getint();
-		doppler[i] = t.getint();
+		doppler[i] = t.getfloat();
 		if (*interfer == true) {
 			fileRefNames[i] = t.getword();
 			dataOffsetBegInterferometric[i]= t.getint();
@@ -69,7 +70,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
-	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, int *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer
+	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, float *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer
 , int *dataOffsetBegInterferometric, int samplesAvoidMaxs,string resultDirectory) {
 
 	if (argc != 3) {

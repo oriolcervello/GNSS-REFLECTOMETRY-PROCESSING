@@ -12,9 +12,9 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 
 ## Installation of CUDA
 
-Here are a little instructions on how to run (in Windows) the program if you do not have CUDA.
+Here are a little instructions on how to install (in Windows) the program if you do not have CUDA.
 
-Requirements of all you need a pc with a Nvidia GPU able to run CUDA.
+Requirements of all you need a pc with a Nvidia GPU able to run CUDA 10.
 
 Insturctions: 
 
@@ -31,7 +31,7 @@ Now CUDA should be working fine.
 
 For testing CUDA I recomend go to others and try to run DeviceProperties.cu, there you will find how.
 
-To build the program go to the Build and Run section.
+To build the program go to the Build and Run section below.
 
 ## Build and Run
 
