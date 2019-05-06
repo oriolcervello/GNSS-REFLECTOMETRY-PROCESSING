@@ -302,9 +302,10 @@ int main(int argc, const char* argv[]) {
 		outputName = resultDirectory+"Maximums" + to_string(i) + ".bin";
 		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
 		
-		if (writeoutputs == 1) {
+		
 			outputName = resultDirectory + "PeaksIteration" + to_string(i) + ".bin";
 			cout << outputName << "\n";
+		if (writeoutputs == 1) {
 			writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
 		}
 		//ELAPSED TIME
