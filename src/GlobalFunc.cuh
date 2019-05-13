@@ -18,7 +18,7 @@ using namespace std;
 #define GLOBFUNC
 __global__ void multip(int, cufftComplex *, cufftComplex *, int, bool);
 __global__ void extendRefSignal(int, cufftComplex *, int);
-__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long, int, int, int, int);
+__global__ void applyDoppler(int, cufftComplex *, float, float, unsigned long long int, int, int, int, int);
 __global__ void inchoerentSum(int, cufftComplex *, Npp32f *, int, int);
 __global__ void scale(int, cufftComplex *, int);
 __global__ void maskAndShift(char *, cuComplex *, int);

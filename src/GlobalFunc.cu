@@ -40,18 +40,26 @@ __global__ void extendRefSignal(int samples, cufftComplex *data, int refsize) {
 	}
 }
 
-__global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long samplePhaseMantain,
+__global__ void applyDoppler(int samples, cufftComplex *data, float freqDoppler, float fs, unsigned long long int samplePhaseMantain,
 	int origSamples, int ddmQuant, int ddmRes, int fftsize)
 {
 	cufftComplex aux, aux2;
-	float angle, freq, phasemantain;
+	double angle, freq, phasemantain;
 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 	for (int i = index; i < samples; i += stride) {
-		phasemantain = ((i % (origSamples)));//origninal samples signal
-		freq = freqDoppler - (ddmRes * (ddmQuant / 2)) + ((i / (origSamples))*(ddmRes));
-		angle = 2.0*PI*(phasemantain + samplePhaseMantain)*(freq / fs);
+		
+		if (ddmQuant > 1) {
+			phasemantain = ((i % (origSamples)));//origninal samples signal
+			freq = freqDoppler - (ddmRes * (ddmQuant / 2)) + ((i / (origSamples))*(ddmRes));
+		}
+		else{ 
+			freq = freqDoppler;
+			phasemantain = i;//origninal samples signal
+		}
+		angle = 2.0*PI*double((phasemantain) + samplePhaseMantain)*(freq / double(fs));
+		//angle = 2.0*PI*(phasemantain + 0)*(freq / fs);
 		aux2.x = cos(angle);
 		aux2.y = sin(angle);
 

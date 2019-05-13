@@ -55,7 +55,7 @@ int main(int argc, const char* argv[]) {
 	string outputName;
 	int numBlocks, nMaxBufferSize,nStdBufferSize,i,k,samplesDoppler= samplesOfSignal;
 	int stdLength = (fftsize / 2) - ((peakSamplesToSave) / 2) - 1;
-	unsigned long long samplePhaseMantain;
+	unsigned long long int samplePhaseMantain;
 	if (ddmQuant > 1) {
 		samplesDoppler = samplesWithOverlap;
 	}
@@ -176,7 +176,8 @@ int main(int argc, const char* argv[]) {
 		//MULTIPLY BY DOPPLER
 		auto dopplerbeg = std::chrono::high_resolution_clock::now();
 		
-		samplePhaseMantain = (i * fftsize*numofFFTs);
+		samplePhaseMantain = (unsigned long long int(i) * unsigned long long int(fftsize)*unsigned long long int(numofFFTs));
+		//cout << "phase: " << samplePhaseMantain << "\n";
 		numBlocks = (samplesDoppler + blockSize - 1) / blockSize;
 		applyDoppler << <numBlocks, blockSize >> > (samplesDoppler, deviceDataFile1, doppler[i], fSampling, samplePhaseMantain, fftsize * numofFFTs, ddmQuant, ddmRes, fftsize);
 		CudaCheckError();
