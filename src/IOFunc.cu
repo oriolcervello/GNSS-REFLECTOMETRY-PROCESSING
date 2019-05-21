@@ -56,6 +56,53 @@ void readRealData(int length, int offsetFromBeg, int bytesToRead, char *data, st
 	}
 }
 
+
+void readRealData2files(int length1, int length2, int offsetFromBeg1, int offsetFromBeg2, int bytesToRead, char *data, string name1, string name2)
+{
+	if (length1 > bytesToRead || length2 > bytesToRead) {
+		cout << "Error: iput length bigger than bytesToRead\n";
+		exit(0);
+	}
+
+	ifstream myfile;
+	myfile.open(name1, ios::binary);
+	if (myfile.is_open())
+	{
+		myfile.seekg(offsetFromBeg1 * sizeof(char));
+		myfile.read(data, length1);
+
+		myfile.close();
+		
+	}
+	else {
+		cout << "ERROR: Unable to open file of Real Data for reading " << name1 << "\n";
+		exit(1);
+	}
+
+	myfile.open(name2, ios::binary);
+	if (myfile.is_open())
+	{
+		myfile.seekg(offsetFromBeg2 * sizeof(char));
+		myfile.read(&data[length1], length2);
+
+		myfile.close();
+
+	}
+	else {
+		cout << "ERROR: Unable to open file of Real Data for reading " << name2 << "\n";
+		exit(1);
+	}
+
+
+	if (length1+length2 < bytesToRead) {
+		cout << "Warning: length smaller than bytesToRead, " << bytesToRead - length1-length2 << " Bytes filled with 0 \n Last/s incoherents will be incomplete \n";
+		memset(&data[length1+length2], 0, bytesToRead - (length1 + length2));
+	}
+}
+
+
+
+
 void readdataInt(int length, int offsetFromBeg, __int16 *data, string name)
 {
 	

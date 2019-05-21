@@ -26,23 +26,25 @@ int main(int argc, const char* argv[]) {
 	int const numofDataLines = atoi(argv[2]);//substitut d'iterations
 	bool interferometic,writeoutputs=1;
 	string *fileDataNames, *fileRefName, resultDirectory;
-	int *dataOffsetBeg, *dataOffsetEnd,*dataOffsetBegInterferometric;
+	int *dataOffsetBeg, *dataOffsetEnd,*dataOffsetBegInterferometric, *typeOfDataline, *dataOffsetEndInterferometric;
 	float *doppler;
 
 	fileRefName = new string[numofDataLines];
 	fileDataNames = new string[numofDataLines];
 	dataOffsetBeg = new int[numofDataLines];
 	dataOffsetBegInterferometric = new int[numofDataLines];
+	dataOffsetEndInterferometric = new int[numofDataLines];
 	dataOffsetEnd = new int[numofDataLines];
+	typeOfDataline = new int[numofDataLines];
 	doppler = new float[numofDataLines];
 
-	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax, &resultDirectory,&writeoutputs);
-	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax, resultDirectory);
+	readConfig(argv[1], numofDataLines, &fftsize, &numofFFTs, &overlap, &fSampling, &blockSize, &peakRangeStd, &peakSamplesToSave, &quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, &ddmRes, &ddmQuant,&interferometic,dataOffsetBegInterferometric, &samplesAvoidMax, &resultDirectory,&writeoutputs, typeOfDataline, dataOffsetEndInterferometric);
+	checkInputConfig(argc, argv, numofDataLines, fftsize, numofFFTs, overlap, fSampling, blockSize, peakRangeStd, peakSamplesToSave, quantofAverageIncoherent, dataOffsetBeg, dataOffsetEnd, doppler, fileDataNames, fileRefName, ddmRes, ddmQuant, interferometic, dataOffsetBegInterferometric, samplesAvoidMax, resultDirectory, writeoutputs, typeOfDataline, dataOffsetEndInterferometric);
 
 	//OTHER DECLARATIONS
 	int  originalSamplesOfSignal = (numofFFTs * (fftsize - overlap)) + overlap;//samples of complex data
 	int samplesOfSignal = originalSamplesOfSignal *ddmQuant;//samples of complex data
-	int bytesToRead = originalSamplesOfSignal /4;
+	int bytesToRead = originalSamplesOfSignal/4;
 	if (originalSamplesOfSignal % 4 != 0) { cout << "Warning bytesToRead rounded toward negative infinity: samplesOfSignal%4!=0 \n "; }
 	int samplesWithOverlap= (numofFFTs * fftsize)*ddmQuant;//total samples needed
 	if(samplesOfSignal > samplesWithOverlap){ samplesWithOverlap = samplesOfSignal;}
@@ -152,20 +154,23 @@ int main(int argc, const char* argv[]) {
 		
 		auto begin = std::chrono::high_resolution_clock::now();
 		//READ, MASK, AND EXTEND
-		prepareData(dataOffsetEnd[i], dataOffsetBeg[i], bytesToRead, hostBytesOfData, fileDataNames[i],
+		prepareData(dataOffsetEnd, dataOffsetBeg, bytesToRead, hostBytesOfData, fileDataNames,
 			deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal, samplesWithOverlap, deviceDataFile1
 			, numofFFTs, fftsize, hostDataFile1,&elapsed_read, &mask_elapsed
-			, &extenddop_elapsed);
+			, &extenddop_elapsed,typeOfDataline,i);
 
 		if (interferometic == true) {
 			chrono::nanoseconds elapsed_read_inter, mask_elapsed_inter, extenddop_elapsed_inter;
-			prepareData( dataOffsetEnd[i]+(dataOffsetBegInterferometric[i]-dataOffsetBeg[i]), dataOffsetBegInterferometric[i],
-				bytesToRead, hostBytesOfData, fileRefName[i],deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal,
+			prepareData( dataOffsetEndInterferometric, dataOffsetBegInterferometric,
+				bytesToRead, hostBytesOfData, fileRefName,deviceBytesOfData, blockSize, ddmQuant, samplesOfSignal,
 				samplesWithOverlap, deviceDataFile2, numofFFTs, fftsize, hostDataFile2,&elapsed_read_inter, &mask_elapsed_inter
-				, &extenddop_elapsed_inter);
+				, &extenddop_elapsed_inter, typeOfDataline, i);
 			elapsed_read += elapsed_read_inter;
 			mask_elapsed += mask_elapsed_inter;
 			extenddop_elapsed += extenddop_elapsed_inter;
+		}
+		if (typeOfDataline[i] == 2) {
+			i++;
 		}
 
 		//CHECK: RAW DATA 
@@ -362,6 +367,8 @@ int main(int argc, const char* argv[]) {
 	delete[] hostDataFile1;
 	delete[] dataOffsetBeg;
 	delete[] dataOffsetEnd;
+	delete[] typeOfDataline;
+	delete[] dataOffsetEndInterferometric;
 	delete[] doppler;
 	delete[] read_elapsed_secs;
 	delete[] write_elapsed_secs;

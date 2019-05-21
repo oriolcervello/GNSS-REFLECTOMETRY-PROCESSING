@@ -6,7 +6,7 @@
 
 void readConfig(const char *configFileName, int numofDataLines, int *fftsize, int *numofFFts, int *overlap, int *fSampling, int *blockSize, int *peakRangeStd, int *peakSamplesToSave,
 	int* quantOfAverIncoh, int *dataOffsetBeg, int *dataOffsetEnd, float *doppler, string *fileNames,string *fileRefNames, int *ddmRes, int *ddmQuant,bool *interfer
-,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs,string *resultDirectory,bool *writeoutputs) {
+,int *dataOffsetBegInterferometric,int *samplesAvoidMaxs,string *resultDirectory,bool *writeoutputs, int *typeOfDataline,int * dataOffsetEndInterferometric) {
 
 	TextParser t(configFileName);
 	TextParserSafeCall(t.seek("*WRITEWAVEFORM"));
@@ -58,6 +58,7 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 	for (int i = 0; i < numofDataLines; i++) {
 		TextParserSafeCall(t.seek("*DATALINE"));
 
+		typeOfDataline[i] = t.getint();
 		fileNames[i] = t.getword();
 		dataOffsetBeg[i] = t.getint();
 		dataOffsetEnd[i] = t.getint();
@@ -65,13 +66,14 @@ void readConfig(const char *configFileName, int numofDataLines, int *fftsize, in
 		if (*interfer == true) {
 			fileRefNames[i] = t.getword();
 			dataOffsetBegInterferometric[i]= t.getint();
+			dataOffsetEndInterferometric[i]= t.getint();
 		}
 	}
 }
 
 void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsize, int numofFFts, int overlap, int fSampling,  int blockSize, int peakRangeStd, int peakSamplesToSave,
 	int quantOfAverIncoh,  int *dataOffsetBeg, int *dataOffsetEnd, float *doppler, string *fileNames, string *fileRefNames, int ddmRes, int ddmQuant, bool interfer
-, int *dataOffsetBegInterferometric, int samplesAvoidMaxs,string resultDirectory) {
+, int *dataOffsetBegInterferometric, int samplesAvoidMaxs,string resultDirectory, bool writeoutputs, int *typeOfDataline, int * dataOffsetEndInterferometric) {
 
 	if (argc != 3) {
 		cout << "Error: Wrong number of arguments\n"; 
@@ -84,6 +86,7 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Third: " << argv[2] << "\n\n";
 
 	cout << "-INPUTS:\n";
+	cout << "Write outputs: " << writeoutputs << "\n";
 	cout << "FFT Size: " << fftsize << "\n";
 	cout << "Num. of FFT: " << numofFFts << "\n";
 	cout << "Overlap: " << overlap << "\n";
@@ -105,13 +108,15 @@ void checkInputConfig(int argc, const char **argv, int numofDataLines, int fftsi
 	cout << "Num of data lines: " << numofDataLines << "\n";
 	cout << "Data lines: \n";
 	for (int i = 0; i < numofDataLines; i++) {
+		cout << typeOfDataline[i] << "  ";
 		cout << fileNames[i] << "  ";
 		cout << dataOffsetBeg[i] << "  ";
 		cout << dataOffsetEnd[i] << "  ";
 		cout << doppler[i] << "  ";
 		if (interfer == true) {
 			cout << fileRefNames[i] << "  ";
-			cout << dataOffsetBegInterferometric[i] << "\n";
+			cout << dataOffsetBegInterferometric[i] << " ";
+			cout << dataOffsetEndInterferometric[i] << "\n";
 		}
 		else {
 			cout << "\n";
@@ -142,16 +147,20 @@ void prepareReference(int fftsize, int overlap,int blockSize ,cufftComplex *host
 }
 
 
-void prepareData( int dataOffsetEnd,int dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string fileDataNames,
+void prepareData( int *dataOffsetEnd,int *dataOffsetBeg, int bytesToRead, char *hostBytesOfData, string *fileDataNames,
 	char *deviceBytesOfData, int blockSize, int ddmQuant, int samplesOfSignal, int samplesWithOverlap, cufftComplex *deviceDataFile1
      ,int numofFFTs, int fftsize, cufftComplex *hostDataFile1, chrono::nanoseconds *elapsed_read, chrono::nanoseconds *mask_elapsed
-	,chrono::nanoseconds *extenddop_elapsed) {
+	,chrono::nanoseconds *extenddop_elapsed, int * typeOfDataline,int ind) {
 	
 	auto begin = std::chrono::high_resolution_clock::now();
 	//READ DATA
 	//readdata(dataOffsetEnd[i]-dataOffsetBeg[i], dataOffsetBeg[i], hostDataFile1, fileDataNames[i]);
-	readRealData(dataOffsetEnd - dataOffsetBeg, dataOffsetBeg, bytesToRead, hostBytesOfData, fileDataNames);
-
+	if (typeOfDataline[ind] == 1) {
+		readRealData(dataOffsetEnd[ind] - dataOffsetBeg[ind], dataOffsetBeg[ind], bytesToRead, hostBytesOfData, fileDataNames[ind]);
+	}
+	else {
+		readRealData2files(dataOffsetEnd[ind] - dataOffsetBeg[ind], dataOffsetEnd[ind + 1] - dataOffsetBeg[ind + 1], dataOffsetBeg[ind], dataOffsetBeg[ind + 1], bytesToRead, hostBytesOfData, fileDataNames[ind], fileDataNames[ind + 1]);
+	}
 	//CudaSafeCall(cudaMemcpy(deviceDataFile1, hostDataFile1, sizeof(cufftComplex)*samplesOfSignal, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(deviceBytesOfData, hostBytesOfData, sizeof(char)*bytesToRead, cudaMemcpyHostToDevice));
 	cudaDeviceSynchronize();
