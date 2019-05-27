@@ -3,37 +3,59 @@
 % -----------------------
 %%
 %OPEN FILE
-fileID = fopen('C:\Users\ori\Documents\Estudis\uni\SA\tfg\CUDA_repos\PROJECT\cufft2\results\PeaksIteration0.bin','r');
+fileID = fopen('C:\GNSS-REFLECTOMETRY-PROCESSING\results\TEST_beam_1_s_4_d/PeaksIteration1380.bin','r');
 % fileID = fopen('prn_L1CA_32.bin','r');
 %%
 %READING COMPLEX SIGNALS
 A = fread(fileID,[2 1000000000000000],'float32');  % Per senyals complexes
 A = A(1,:)+1j*A(2,:);
+fclose(fileID);
 
 %%
 samplesToSave=311;
-numOfFFT=80;
-ddmQuant=51;
+numOfFFT=1000;
+ddmQuant=21;
 
 B = reshape(A,[samplesToSave ddmQuant*numOfFFT]);
+% B = reshape(A,[ddmQuant samplesToSave*numOfFFT]);
 
 %%
-Span = 51;
-Resolucio = 25; % Hz
+
+% C = B(:,1:1000:end);
+C = B(1:311,1:1000:end);
+
+
+%%
+Span = 11;
+Resolucio = 100; % Hz
 F_doppler = 517; % Hz
 F_ = F_doppler-(Span-1)/2*Resolucio:Resolucio:F_doppler+(Span-1)/2*Resolucio;
 
 %%
-% ddmToView=17;
+ ddmToView=1;
 % 
-% C=B(:,ddmToView:numOfFFT:ddmQuant*numOfFFT);
-% C=abs(C).^2;
-% % C=abs(C);
-% %  figure
-% % mesh(F_,1:samplesToSave,C);
+C=B(:,ddmToView:numOfFFT:ddmQuant*numOfFFT);
+
+C=abs(C').^2;
+% C=abs(C);
+ figure
+% mesh(F_,1:samplesToSave,C);
+mesh(C)
+
 
 %%
 
+D = abs(B(:,1:numOfFFT:ddmQuant*numOfFFT)).^2;
+for i=2:1000
+    D = D+abs(B(:,i:numOfFFT:ddmQuant*numOfFFT)).^2;
+end
+
+ figure
+mesh(D)
+
+
+%%
+figure
 for i=1:numOfFFT
     C=B(:,i:numOfFFT:ddmQuant*numOfFFT);
     D = C;
@@ -42,7 +64,8 @@ for i=1:numOfFFT
     [a,b] = max(max(C));
     [~,c] = max(max(C'));
     
-    mesh(F_,1:samplesToSave,C);
+%     mesh(F_,1:samplesToSave,C);
+    mesh(C)
     
     valor(i) = a;
     delay(i) = c;

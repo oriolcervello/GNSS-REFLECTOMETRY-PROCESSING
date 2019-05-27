@@ -3,7 +3,8 @@
 % -----------------------
 %%
 %OPEN FILE
-fileID = fopen('Maximums.bin','r');
+% fileID = fopen('Maximums.bin','r');
+fileID = fopen('C:\GNSS-REFLECTOMETRY-PROCESSING\results\TEST_beam_1_s_2_d/Maximums300.bin','r');
 % fileID = fopen('prn_L1CA_32.bin','r');
 %%
 %READING FILE
@@ -18,7 +19,7 @@ stdValue=A(4,:);
 dopplerFreq=A(5,:);
 %%
 % FIND MAX FOR 1 FFT
-numOfFFT=100;
+numOfFFT=1000;
 averageIncoherent=10;
 
 FFTtoView=1;
@@ -29,3 +30,14 @@ valueCenteredForSavingPeak=aux(:,pos);
 %%
 fclose(fileID);
 clear all;
+
+%%
+for i=1:100
+
+    aux = A(:,i:1000/10:end);
+    [~,pos] = max(aux(2,:));
+%     aux(1,pos)
+    caca(i) = aux(2,pos)
+end
+
+figure, hist(caca.^2)
