@@ -306,7 +306,7 @@ int main(int argc, const char* argv[]) {
 
 		//OUTPUT
 		auto writeBeg = chrono::high_resolution_clock::now();
-		outputName = resultDirectory+"Maximums" + to_string(i) + ".bin";
+		outputName = resultDirectory+"Maximums" + to_string(i-typ2) + ".bin";
 		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
 		
 		
