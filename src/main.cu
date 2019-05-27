@@ -55,7 +55,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	string outputName;
-	int numBlocks, nMaxBufferSize,nStdBufferSize,i,k,samplesDoppler= samplesOfSignal;
+	int numBlocks, nMaxBufferSize,nStdBufferSize,i,k,typ2=0,samplesDoppler= samplesOfSignal;
 	int stdLength = (fftsize / 2) - ((peakSamplesToSave) / 2) - 1;
 	unsigned long long int samplePhaseMantain;
 	if (ddmQuant > 1) {
@@ -171,6 +171,7 @@ int main(int argc, const char* argv[]) {
 		}
 		if (typeOfDataline[i] == 2) {
 			i++;
+			typ2++;
 		}
 
 		//CHECK: RAW DATA 
@@ -309,7 +310,7 @@ int main(int argc, const char* argv[]) {
 		writeMaxs(inchoerentNumofFFT, hostarrayMaxs, hostarrayPos, hostarrayStd, hostarrayMean,doppler[i], outputName,i, ddmRes,ddmQuant,numofFFTs / quantofAverageIncoherent);
 		
 		
-			outputName = resultDirectory + "PeaksIteration" + to_string(i) + ".bin";
+			outputName = resultDirectory + "PeaksIteration" + to_string(i-typ2) + ".bin";
 			cout << outputName << "\n";
 		if (writeoutputs == 1) {
 			writedata(numofFFTs*peakSamplesToSave*ddmQuant, hostDataFile1, outputName);
