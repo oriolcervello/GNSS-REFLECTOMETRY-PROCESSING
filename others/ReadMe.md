@@ -8,8 +8,8 @@ To build it you can run go to scr/ directory and run build script with argument 
 	
 or you can do it yourself:
 
-    nvcc DeviceProperties.cu -o DeviceProperties.cu
+    nvcc DeviceProperties.cu -o TestDevice
 
-    .\DeviceProperties.cu
+    .\TestDevice
 
 
