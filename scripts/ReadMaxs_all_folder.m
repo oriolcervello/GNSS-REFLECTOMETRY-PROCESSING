@@ -1,7 +1,7 @@
 %==========================================================================
 % Author: Oriol Cervelló (oriol.cn [at] protonmail.com) 
 %==========================================================================
-% License: GPL-3.0-only
+% License: GNU GPLv3.0
 % Copyright (C) 2019  Oriol Cervelló
 %
 % This program is free software: you can redistribute it and/or modify
