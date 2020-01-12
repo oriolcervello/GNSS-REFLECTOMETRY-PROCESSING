@@ -105,5 +105,5 @@ There is a ReadMe.md on /results directory explaining the output files and how t
 ## Licence
 You may find it in a specific licence file.
 
-## Contact
+## Credit
 Project developed by Oriol Cervelló.
