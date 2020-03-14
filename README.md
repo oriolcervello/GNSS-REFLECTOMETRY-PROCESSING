@@ -9,8 +9,10 @@ All the contents were developed for the [Passive Remote Sensing Laboratory (RSLa
 
 New versions of this program may be found at [GitHub](https://github.com/oriolcervello/GNSS-REFLECTOMETRY-PROCESSING/) 
 
-Cite: Cervelló i Nogués, Oriol. Advanced GNSS-R signals processing with GPU. 2019
-[http://hdl.handle.net/10230/42432](http://hdl.handle.net/10230/42432)
+Cite: [https://ieeexplore.ieee.org/document/9028131](https://ieeexplore.ieee.org/document/9028131) as:
+
+    O. Cervello, D. Pascual, R. Onrubia and A. Camps, "Advanced GNSS-R signals processing with GPUs,"
+    in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing.
 
 ## Installation of CUDA
 
