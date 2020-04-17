@@ -11,8 +11,8 @@ New versions of this program may be found at [GitHub](https://github.com/oriolce
 
 Cite: [https://ieeexplore.ieee.org/document/9028131](https://ieeexplore.ieee.org/document/9028131) as:
 
-    O. Cervello, D. Pascual, R. Onrubia and A. Camps, "Advanced GNSS-R signals processing with GPUs,"
-    in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing.
+    O. C. i. Nogues, D. Pascual, R. Onrubia and A. Camps, "Advanced GNSS-R Signals Processing With GPUs,"
+    in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, vol. 13, pp. 1158-1163, 2020.
 
 ## Installation of CUDA
 
